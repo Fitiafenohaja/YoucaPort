@@ -22,6 +22,8 @@ def valider_port(port: int | str) -> int:
     Lève PortInvalideError lorsque la valeur n'est pas un entier entre 1 et 65535.
     """
     try:
+        if isinstance(port, bool) or not isinstance(port, (int, str)):
+            raise ValueError
         valeur = int(port)
     except (TypeError, ValueError) as exc:
         raise PortInvalideError(MESSAGE_PORT_INVALIDE) from exc

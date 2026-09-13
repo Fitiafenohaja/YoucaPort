@@ -68,8 +68,8 @@ def test_rechercher_processus_port_libre() -> None:
     assert process_manager.rechercher_premier_processus(port) is None
 
 
-def test_arreter_processus_grace(socket_ecoute: socket.socket) -> None:
-    port = socket_ecoute.getsockname()[1]
+def test_arreter_processus_grace() -> None:
+    port = _port_libre()
     code = (
         "import socket, time; "
         f"s = socket.socket(); s.bind(('127.0.0.1', {port})); s.listen(); "
@@ -80,6 +80,7 @@ def test_arreter_processus_grace(socket_ecoute: socket.socket) -> None:
         _attendre_port_occupe(port)
         processus = process_manager.rechercher_premier_processus(port)
         assert processus is not None
+        assert processus.pid == enfant.pid
 
         process_manager.arreter_processus(processus.pid)
 

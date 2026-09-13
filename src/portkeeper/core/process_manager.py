@@ -90,6 +90,16 @@ def rechercher_premier_processus(port: int) -> Processus | None:
     return None
 
 
+def cwd_processus(pid: int) -> str | None:
+    """Répertoire de travail courant d'un processus, ou None sinon."""
+    try:
+        proc = psutil.Process(pid)
+    except psutil.NoSuchProcess:
+        return None
+
+    return _essayer(proc.cwd, None)
+
+
 def arreter_processus(pid: int, duree_attente: float = TEMPS_ATTENTE_ARRET) -> None:
     """Arrête proprement un processus : SIGTERM d'abord, SIGKILL en dernier recours.
 
@@ -125,7 +135,7 @@ def arreter_processus(pid: int, duree_attente: float = TEMPS_ATTENTE_ARRET) -> N
         raise PermissionSystemeError(MESSAGE_PERMISSION) from exc
 
 
-def _essayer(action, valeur_defaut) -> str:
+def _essayer(action, valeur_defaut) -> str | None:
     """Exécute une action psutil et renvoie une valeur par défaut en cas d'échec."""
     try:
         valeur = action()

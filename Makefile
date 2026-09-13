@@ -1,4 +1,4 @@
-.PHONY: install lock test lint format build
+.PHONY: install lock test lint format build binary
 
 install: ## Installe les dépendances avec Poetry
 	poetry install
@@ -17,3 +17,6 @@ format: ## Formate le code avec Ruff
 
 build: ## Construit les paquets dist/*.whl + tar.gz
 	poetry build
+
+binary: ## Construit un exécutable autonome (PyInstaller)
+	bash scripts/build_binary.sh

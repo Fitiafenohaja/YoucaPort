@@ -124,6 +124,62 @@ portkeeper --version
 
 ---
 
+## Fonctionnalités avancées (V2 → V5)
+
+### Suggérer des ports libres — Auto Port (V4)
+
+Quand un port est occupé, `check` propose automatiquement des ports libres proches.
+Une commande dédiée existe aussi :
+
+```bash
+portkeeper suggest 3000 --count 5
+```
+
+```text
+Ports libres suggérés : 3001, 3002, 3003, 3004, 3005
+```
+
+### Profils de projets — Port Profiles (V2)
+
+Associez des ports à des projets nommés (stockage : `~/.config/portkeeper/profiles.json`) :
+
+```bash
+portkeeper profile add frontend 3000     # associe le port 3000 au projet "frontend"
+portkeeper profile list                   # liste les profils
+portkeeper profile show frontend          # état des ports d'un profil
+portkeeper profile remove frontend        # supprime le profil
+```
+
+### Ports d'un projet — Project Management (V3)
+
+Détecte automatiquement les ports utilisés par les processus tournant depuis un dossier :
+
+```bash
+portkeeper project /chemin/vers/mon/projet
+# ou, depuis le dossier du projet :
+portkeeper project .
+```
+
+### Dashboard web local (V5)
+
+Interface web locale (stdlib, aucune dépendance supplémentaire), auto-rechargée :
+
+```bash
+portkeeper dashboard            # http://127.0.0.1:8421
+portkeeper dashboard --port 9000
+```
+
+Une API JSON est exposée sur `/api/ports`, pratique pour l'intégration.
+
+### Exécutable autonome (PyInstaller)
+
+```bash
+make binary       # ou : ./scripts/dev.sh binary
+./dist/portkeeper --version
+```
+
+---
+
 ## Fonctionnement de l'arrêt d'un processus
 
 PortKeeper ne tue jamais un processus brutalement par défaut :
@@ -151,13 +207,17 @@ portkeeper/
 │
 ├── src/portkeeper/
 │   ├── __init__.py        # version via importlib.metadata (repli tomllib en dev)
-│   ├── cli.py              # commandes Typer (status/check/free) — pas de logique métier
-│   ├── menu.py             # menu interactif — pas de logique métier
+│   ├── cli.py              # commandes Typer (status/check/free/suggest/project/dashboard/profile)
+│   ├── menu.py             # menu interactif + sous-menu — pas de logique métier
+│   ├── dashboard.py        # interface web locale (V5) — stdlib uniquement
 │   │
 │   ├── core/                # aucune dépendance d'affichage, 100% testable
 │   │   ├── port_manager.py    # orchestration, dataclass InfoPort
 │   │   ├── process_manager.py # seul module appelant psutil (abstraction Linux/macOS/Windows)
-│   │   └── validator.py       # validateurs + exceptions (PortInvalideError, ...)
+│   │   ├── validator.py       # validateurs + exceptions (PortInvalideError, ...)
+│   │   ├── profiles.py        # profils de projets (V2) — JSON via XDG
+│   │   ├── suggester.py       # ports libres à proximité (V4)
+│   │   └── project_manager.py # ports utilisés par un projet (V3)
 │   │
 │   └── utils/
 │       └── terminal.py     # seul module Rich (tableaux, confirmations, gestion des erreurs)
@@ -165,7 +225,10 @@ portkeeper/
 └── tests/
     ├── test_ports.py        # sockets réellement en écoute
     ├── test_processes.py    # sous-processus enfants réellement lancés/tués
-    └── test_validator.py
+    ├── test_validator.py
+    ├── test_profiles.py     # profils de projets
+    ├── test_suggester.py    # auto-port
+    └── test_project.py      # détection par projet
 ```
 
 **Principes respectés :**
@@ -196,6 +259,10 @@ make format
 # Build (wheel + sdist)
 make build
 # ou : poetry build
+
+# Exécutable autonome (PyInstaller)
+make binary
+# ou : ./scripts/dev.sh binary
 ```
 
 Toutes ces commandes sont aussi disponibles via `scripts/dev.sh`.
@@ -216,17 +283,15 @@ git push origin v0.1.0
 
 ---
 
-## Limites de cette version (MVP)
+## Limites de cette version
 
-Conformément au cahier des charges, ne sont **pas** inclus pour l'instant :
+Comme prévu par le cahier des charges, PortKeeper reste volontairement simple :
 
-- Windows / macOS (abstraction prévue dans `process_manager.py`, mais non testée)
-- Dashboard web
-- Docker management
-- Port Profiles (association ports ↔ projets)
-- Détection automatique de port disponible (« Auto Port »)
-
-Ces éléments sont prévus dans les versions futures (voir le cahier des charges).
+- **Windows / macOS** : l'abstraction existe dans `process_manager.py` (psutil), mais ces
+  plateformes ne sont pas testées — seule Linux est validée.
+- **Docker management** : hors périmètre MVP.
+- **Dashboard lourd / comptes / base de données** : hors périmètre MVP ; le dashboard V5
+  est volontairement minimal (page locale, stdlib).
 
 ---
 

@@ -35,7 +35,7 @@ jobs:
             ${{ runner.os }}-poetry-
 
       - name: Installer les dépendances
-        run: poetry install
+        run: poetry install --without packaging
 
       - name: Lint (Ruff)
         run: poetry run ruff check .

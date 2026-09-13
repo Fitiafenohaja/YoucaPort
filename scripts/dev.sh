@@ -28,8 +28,11 @@ case "$COMMANDE" in
   build)
     poetry build
     ;;
+  binary)
+    bash scripts/build_binary.sh
+    ;;
   *)
-    echo "Usage : ./scripts/dev.sh {install|lock|test|lint|format|build}"
+    echo "Usage : ./scripts/dev.sh {install|lock|test|lint|format|build|binary}"
     exit 0
     ;;
 esac

@@ -50,25 +50,36 @@ def afficher_port_libre(info: InfoPort) -> None:
 def afficher_port_occupe(info: InfoPort) -> None:
     """Affiche qu'un port est occupé avec les informations du processus."""
     _console.print(f"[bold red]✗ Port {info.port} occupé[/bold red]")
-    if info.processus is not None:
-        _console.print(f"Application : {info.processus.nom}")
-        _console.print(f"PID          : {info.processus.pid}")
-        _console.print(f"État         : {_etat_francais(info.processus.etat)}")
+    _afficher_details_processus(info)
 
 
 def afficher_resume_processus(info: InfoPort) -> None:
     """Affiche le processus occupant un port avant toute action."""
-    port = info.port
-    processus = info.processus
-
-    _console.print(f"Port : {port}")
+    _console.print(f"Port : {info.port}")
     _console.print()
-    if processus is None:
+    if info.processus is None:
         _console.print("Aucun processus actif.")
     else:
-        _console.print(f"Application : {processus.nom}")
-        _console.print(f"PID         : {processus.pid}")
-        _console.print(f"État        : {_etat_francais(processus.etat)}")
+        _afficher_details_processus(info)
+
+
+def afficher_suggestions(ports: list[int]) -> None:
+    """Affiche une liste de ports libres suggérés (Auto Port)."""
+    if not ports:
+        return
+    _console.print("[cyan]Ports libres suggérés :[/cyan] " + ", ".join(str(p) for p in ports))
+
+
+def afficher_profils(profils: dict[str, list[int]]) -> None:
+    """Affiche les profils de projets (association ports ↔ projets)."""
+    tableau = Table(title="Profils de projets", header_style="bold cyan")
+    tableau.add_column("PROJET")
+    tableau.add_column("PORTS")
+
+    for nom in profils:
+        tableau.add_row(nom, ", ".join(str(port) for port in profils[nom]))
+
+    _console.print(tableau)
 
 
 def afficher_succes(message: str) -> None:
@@ -110,12 +121,22 @@ def afficher_menu() -> None:
     _console.print()
 
 
-def demander_choix() -> str | None:
-    """Demande un choix du menu ; None si l'utilisateur interrompt."""
+def demander_choix(codes: list[str] | None = None) -> str | None:
+    """Demande un choix de menu parmi les codes donnés ; None si interrompu."""
+    choix = codes or ["1", "2", "3", "4"]
     try:
-        return Prompt.ask("Choix", choices=["1", "2", "3", "4"], show_choices=False)
+        return Prompt.ask("Choix", choices=choix, show_choices=False)
     except KeyboardInterrupt:
         return None
+
+
+def demander_sous_menu() -> str | None:
+    """Affiche le sous-menu de gestion des ports et renvoie le choix."""
+    _console.print()
+    _console.print("1. Vérifier un port")
+    _console.print("2. Libérer un port")
+    _console.print("3. Retour")
+    return demander_choix(["1", "2", "3"])
 
 
 def demander_port() -> str:
@@ -137,3 +158,22 @@ def attendre_entree() -> None:
 def _etat_francais(etat: str) -> str:
     """Traduit l'état psutil d'un processus en français lisible."""
     return _ETATS_FRANCAIS.get(etat, etat.capitalize())
+
+
+def _afficher_details_processus(info: InfoPort) -> None:
+    """Affiche les détails d'un processus (application, processus, PID, état)."""
+    processus = info.processus
+    if processus is None:
+        return
+
+    _console.print(f"Application : {processus.nom}")
+    if processus.commande:
+        _console.print(f"Processus   : {_tronquer(processus.commande)}")
+    _console.print(f"PID          : {processus.pid}")
+    _console.print(f"État         : {_etat_francais(processus.etat)}")
+
+
+def _tronquer(texte: str, longueur: int = 80) -> str:
+    """Raccourcit une chaîne sur une seule ligne avec des points de suspension."""
+    texte = " ".join(texte.split())
+    return texte if len(texte) <= longueur else texte[:longueur] + "…"
