@@ -16,6 +16,10 @@ class PortNonOccupeError(YoucaPortError):
     """Le port demandé n'est utilisé par aucun processus."""
 
 
+class PortSansProcessusError(YoucaPortError):
+    """Le port est occupé mais aucun processus n'a pu être identifié."""
+
+
 @dataclass(frozen=True)
 class InfoPort:
     """État d'un port et, le cas échéant, le processus qui l'occupe."""
@@ -43,10 +47,13 @@ def verifier_port(port: int | str) -> InfoPort:
     numero = valider_port(port)
     processus = process_manager.rechercher_premier_processus(numero)
 
-    if processus is None:
-        return InfoPort(port=numero, processus=None, etat=LIBRE)
+    if processus is not None:
+        return InfoPort(port=numero, processus=processus, etat=OCCUPE)
 
-    return InfoPort(port=numero, processus=processus, etat=OCCUPE)
+    if process_manager.port_en_ecoute(numero):
+        return InfoPort(port=numero, processus=None, etat=OCCUPE)
+
+    return InfoPort(port=numero, processus=None, etat=LIBRE)
 
 
 def liberer_port(port: int | str) -> InfoPort:
@@ -60,6 +67,10 @@ def liberer_port(port: int | str) -> InfoPort:
     processus = process_manager.rechercher_premier_processus(numero)
 
     if processus is None:
+        if process_manager.port_en_ecoute(numero):
+            raise PortSansProcessusError(
+                f"Le port {numero} est occupé mais aucun processus n'y est associé."
+            )
         raise PortNonOccupeError(f"Aucun processus trouvé sur le port {numero}.")
 
     process_manager.arreter_processus(processus.pid)

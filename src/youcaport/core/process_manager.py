@@ -63,6 +63,11 @@ def lister_connexions_ecoute() -> list[tuple[int, int]]:
     return sorted(resultats, key=lambda element: element[0])
 
 
+def port_en_ecoute(port: int) -> bool:
+    """Indique si un port est en écoute, que le processus soit identifiable ou non."""
+    return any(port_ecoute == port for port_ecoute, _ in lister_connexions_ecoute())
+
+
 def construire_processus(pid: int) -> Processus | None:
     """Construit une description d'un processus, ou None s'il n'existe plus."""
     try:

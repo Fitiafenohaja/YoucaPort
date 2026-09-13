@@ -9,7 +9,7 @@ import typer
 from youcaport import __version__
 from youcaport import dashboard as module_dashboard
 from youcaport.core import port_manager, profiles, project_manager, suggester
-from youcaport.core.port_manager import LIBRE
+from youcaport.core.port_manager import LIBRE, PortSansProcessusError
 from youcaport.core.process_manager import ProcessusIntrouvableError
 from youcaport.core.profiles import ProfilInexistantError
 from youcaport.core.validator import valider_port
@@ -94,6 +94,13 @@ def free(port: str) -> None:
     if info.etat == LIBRE:
         terminal.afficher_erreur(f"Aucun processus trouvé sur le port {info.port}.")
         raise typer.Exit(code=1)
+
+    if info.processus is None:
+        _sortie_erreur(
+            PortSansProcessusError(
+                f"Le port {info.port} est occupé mais aucun processus n'y est associé."
+            )
+        )
 
     terminal.afficher_resume_processus(info)
     if not terminal.demander_confirmation():

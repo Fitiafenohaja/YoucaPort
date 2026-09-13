@@ -83,6 +83,12 @@ def _liberer_un_port() -> None:
         terminal.afficher_erreur(f"Aucun processus trouvé sur le port {info.port}.")
         return
 
+    if info.processus is None:
+        terminal.afficher_erreur(
+            f"Le port {info.port} est occupé mais aucun processus n'y est associé."
+        )
+        return
+
     terminal.afficher_resume_processus(info)
     if not terminal.demander_confirmation():
         terminal.afficher_information("Arrêt annulé, aucun processus arrêté.")

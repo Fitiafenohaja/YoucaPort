@@ -11,7 +11,13 @@ import time
 import pytest
 
 from youcaport.core import port_manager, process_manager
-from youcaport.core.port_manager import LIBRE, OCCUPE, InfoPort, PortNonOccupeError
+from youcaport.core.port_manager import (
+    LIBRE,
+    OCCUPE,
+    InfoPort,
+    PortNonOccupeError,
+    PortSansProcessusError,
+)
 from youcaport.core.process_manager import ProcessusIntrouvableError
 from youcaport.core.validator import PortInvalideError
 
@@ -103,6 +109,24 @@ def test_liberer_port_processus_deja_arrete(socket_ecoute: socket.socket, monkey
 
     monkeypatch.setattr(process_manager, "arreter_processus", arret_fantome)
     with pytest.raises(ProcessusIntrouvableError):
+        port_manager.liberer_port(port)
+
+
+def test_verifier_port_occupe_sans_processus(monkeypatch) -> None:
+    port = _port_libre()
+    monkeypatch.setattr(process_manager, "lister_connexions_ecoute", lambda: [(port, -1)])
+
+    resultat = port_manager.verifier_port(port)
+
+    assert resultat.etat == OCCUPE
+    assert resultat.processus is None
+
+
+def test_liberer_port_occupe_sans_processus(monkeypatch) -> None:
+    port = _port_libre()
+    monkeypatch.setattr(process_manager, "lister_connexions_ecoute", lambda: [(port, -1)])
+
+    with pytest.raises(PortSansProcessusError, match="aucun processus"):
         port_manager.liberer_port(port)
 
 

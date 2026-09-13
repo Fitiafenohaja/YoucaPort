@@ -164,6 +164,7 @@ def _afficher_details_processus(info: InfoPort) -> None:
     """Affiche les détails d'un processus (application, processus, PID, état)."""
     processus = info.processus
     if processus is None:
+        _console.print("Application : inconnu (processus non identifiable)")
         return
 
     _console.print(f"Application : {processus.nom}")
