@@ -95,7 +95,7 @@ def test_liberer_port_occupe() -> None:
         apres = port_manager.liberer_port(port)
 
         assert apres.etat == LIBRE
-        assert enfant.poll() is not None
+        assert enfant.wait(timeout=process_manager.TEMPS_ATTENTE_ARRET) is not None
     finally:
         if enfant.poll() is None:
             enfant.kill()

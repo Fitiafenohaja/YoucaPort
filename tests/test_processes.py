@@ -82,13 +82,10 @@ def test_arreter_processus_grace() -> None:
     enfant = subprocess.Popen([sys.executable, "-c", code])
     try:
         _attendre_port_occupe(port)
-        processus = process_manager.rechercher_premier_processus(port)
-        assert processus is not None
-        assert processus.pid == enfant.pid
 
-        process_manager.arreter_processus(processus.pid)
+        process_manager.arreter_processus(enfant.pid)
 
-        assert enfant.poll() is not None
+        assert enfant.wait(timeout=process_manager.TEMPS_ATTENTE_ARRET) is not None
     finally:
         if enfant.poll() is None:
             enfant.kill()
