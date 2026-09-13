@@ -8,7 +8,7 @@ import typer
 
 from youcaport import __version__
 from youcaport import dashboard as module_dashboard
-from youcaport.core import port_manager, profiles, project_manager, suggester
+from youcaport.core import port_manager, process_manager, profiles, project_manager, suggester
 from youcaport.core.port_manager import LIBRE, PortSansProcessusError
 from youcaport.core.process_manager import ProcessusIntrouvableError
 from youcaport.core.profiles import ProfilInexistantError
@@ -103,6 +103,7 @@ def free(port: str) -> None:
         )
 
     terminal.afficher_resume_processus(info)
+    _prevenir_arret_immediat()
     if not terminal.demander_confirmation():
         terminal.afficher_information("Arrêt annulé, aucun processus arrêté.")
         return
@@ -115,6 +116,15 @@ def free(port: str) -> None:
 
     terminal.afficher_succes("Processus arrêté.")
     terminal.afficher_succes(f"Port {info.port} libéré.")
+
+
+def _prevenir_arret_immediat() -> None:
+    """Prévient que l'arrêt est immédiat sur Windows (pas de fermeture gracieuse)."""
+    if not process_manager.ARRET_DOUX:
+        terminal.afficher_information(
+            "Remarque : sur Windows, l'arrêt du processus est immédiat "
+            "(aucune fermeture gracieuse n'est possible)."
+        )
 
 
 @app.command()

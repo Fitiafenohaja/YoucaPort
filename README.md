@@ -180,6 +180,22 @@ make binary       # ou : ./scripts/dev.sh binary
 
 ---
 
+## Windows
+
+YoucaPort fonctionne aussi sur Windows (psutil est multiplateforme, couvert par un job CI
+`windows-latest`). Particularités :
+
+- **Installation** : `pip install youcaport` (ou `pipx install youcaport`) ; l'exécutable
+  PyInstaller se construit sur une machine Windows (`make binary` n'est pas requis,
+  utiliser `scripts/build_binary.sh` dans un terminal Windows).
+- **Arrêt d'un processus** : Windows n'offre pas de signal d'arrêt gracieux (SIGTERM) ;
+  `terminate()` réalise un arrêt immédiat. YoucaPort vous en avertit explicitement avant
+  la confirmation.
+- **Profil de projets** : le fichier `profiles.json` est stocké dans `%LOCALAPPDATA%\youcaport\`
+  (au lieu de `~/.config/youcaport/` sur Linux/macOS).
+
+---
+
 ## Fonctionnement de l'arrêt d'un processus
 
 YoucaPort ne tue jamais un processus brutalement par défaut :

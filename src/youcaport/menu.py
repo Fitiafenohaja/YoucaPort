@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from youcaport.core import port_manager, suggester
+from youcaport.core import port_manager, process_manager, suggester
 from youcaport.core.port_manager import LIBRE
 from youcaport.utils import terminal
 
@@ -90,6 +90,11 @@ def _liberer_un_port() -> None:
         return
 
     terminal.afficher_resume_processus(info)
+    if not process_manager.ARRET_DOUX:
+        terminal.afficher_information(
+            "Remarque : sur Windows, l'arrêt du processus est immédiat "
+            "(aucune fermeture gracieuse n'est possible)."
+        )
     if not terminal.demander_confirmation():
         terminal.afficher_information("Arrêt annulé, aucun processus arrêté.")
         return

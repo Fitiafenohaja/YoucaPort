@@ -5,6 +5,7 @@ Tout appel a psutil passe obligatoirement par ce module.
 
 from __future__ import annotations
 
+import sys
 from dataclasses import dataclass
 
 import psutil
@@ -12,6 +13,9 @@ import psutil
 from youcaport.core.validator import YoucaPortError
 
 TEMPS_ATTENTE_ARRET = 3.0
+# Sur Windows, psutil.terminate() = TerminateProcess (arrêt immédiat) :
+# aucune fermeture gracieuse type SIGTERM n'est possible.
+ARRET_DOUX = sys.platform != "win32"
 
 MESSAGE_PERMISSION = (
     "Permission insuffisante. YoucaPort ne peut pas accéder aux informations de ce processus."
@@ -99,7 +103,7 @@ def cwd_processus(pid: int) -> str | None:
     """Répertoire de travail courant d'un processus, ou None sinon."""
     try:
         proc = psutil.Process(pid)
-    except psutil.NoSuchProcess:
+    except (psutil.NoSuchProcess, ValueError):
         return None
 
     return _essayer(proc.cwd, None)
@@ -119,7 +123,7 @@ def arreter_processus(pid: int, duree_attente: float = TEMPS_ATTENTE_ARRET) -> N
                 f"Le processus {pid} n'est plus actif, le port est disponible."
             )
 
-        proc.terminate()  # SIGTERM : arrêt propre, jamais de SIGKILL en premier.
+        proc.terminate()  # SIGTERM (POSIX) ; arrêt immédiat sur Windows.
         proc.wait(timeout=duree_attente)
 
     except psutil.TimeoutExpired:
@@ -133,6 +137,10 @@ def arreter_processus(pid: int, duree_attente: float = TEMPS_ATTENTE_ARRET) -> N
         except psutil.AccessDenied as deriv:
             raise PermissionSystemeError(MESSAGE_PERMISSION) from deriv
     except psutil.NoSuchProcess as exc:
+        raise ProcessusIntrouvableError(
+            f"Le processus {pid} n'est plus actif, le port est disponible."
+        ) from exc
+    except ValueError as exc:
         raise ProcessusIntrouvableError(
             f"Le processus {pid} n'est plus actif, le port est disponible."
         ) from exc

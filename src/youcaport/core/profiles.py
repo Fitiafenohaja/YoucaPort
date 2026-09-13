@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from pathlib import Path
 
 from youcaport.core.validator import YoucaPortError, valider_port
@@ -21,8 +22,15 @@ class ProfilInexistantError(YoucaPortError):
 
 
 def chemin_fichier_profils() -> Path:
-    """Chemin du fichier de profils (XDG_CONFIG_HOME, sinon ~/.config)."""
-    racine = Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config")
+    """Chemin du fichier de profils selon la plateforme.
+
+    Windows : %LOCALAPPDATA%\\youcaport\\profiles.json
+    *nix    : $XDG_CONFIG_HOME/youcaport/profiles.json, sinon ~/.config/youcaport.
+    """
+    if sys.platform == "win32":
+        racine = Path(os.environ.get("LOCALAPPDATA") or Path.home())
+    else:
+        racine = Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config")
     return racine / _DOSSIER_CONFIG / _FICHIER_PROFILS
 
 

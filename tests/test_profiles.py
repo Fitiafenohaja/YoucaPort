@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import pytest
@@ -9,6 +10,23 @@ import pytest
 from youcaport.core import profiles
 from youcaport.core.profiles import ProfilInexistantError, ProfilInvalideError
 from youcaport.core.validator import PortInvalideError
+
+
+def test_chemin_profils_windows(monkeypatch) -> None:
+    monkeypatch.setattr(sys, "platform", "win32")
+    monkeypatch.setenv("LOCALAPPDATA", "C:\\Users\\Test\\AppData\\Local")
+
+    chemin = str(profiles.chemin_fichier_profils())
+
+    for composant in ["AppData", "Local", "youcaport", "profiles.json"]:
+        assert composant in chemin
+
+
+def test_chemin_profils_linux_nix() -> None:
+    chemin = profiles.chemin_fichier_profils()
+
+    assert "youcaport" in chemin.parts
+    assert chemin.name == "profiles.json"
 
 
 def test_ajouter_et_lister(tmp_path: Path) -> None:
