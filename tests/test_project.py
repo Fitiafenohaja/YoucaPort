@@ -10,8 +10,8 @@ from pathlib import Path
 
 import pytest
 
-from portkeeper.core import port_manager, process_manager
-from portkeeper.core.project_manager import ProjetIntrouvableError, lister_ports_projet
+from youcaport.core import port_manager, process_manager
+from youcaport.core.project_manager import ProjetIntrouvableError, lister_ports_projet
 
 
 def _port_libre() -> int:

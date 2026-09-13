@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from portkeeper.core.validator import PortInvalideError, valider_port
+from youcaport.core.validator import PortInvalideError, valider_port
 
 
 @pytest.mark.parametrize(

@@ -1,4 +1,4 @@
-"""Points d'entrée CLI de PortKeeper (Typer)."""
+"""Points d'entrée CLI de YoucaPort (Typer)."""
 
 from __future__ import annotations
 
@@ -6,19 +6,19 @@ from typing import NoReturn
 
 import typer
 
-from portkeeper import __version__
-from portkeeper import dashboard as module_dashboard
-from portkeeper.core import port_manager, profiles, project_manager, suggester
-from portkeeper.core.port_manager import LIBRE
-from portkeeper.core.process_manager import ProcessusIntrouvableError
-from portkeeper.core.profiles import ProfilInexistantError
-from portkeeper.core.validator import valider_port
-from portkeeper.menu import lancer_menu
-from portkeeper.utils import terminal
+from youcaport import __version__
+from youcaport import dashboard as module_dashboard
+from youcaport.core import port_manager, profiles, project_manager, suggester
+from youcaport.core.port_manager import LIBRE
+from youcaport.core.process_manager import ProcessusIntrouvableError
+from youcaport.core.profiles import ProfilInexistantError
+from youcaport.core.validator import valider_port
+from youcaport.menu import lancer_menu
+from youcaport.utils import terminal
 
 app = typer.Typer(
     add_completion=False,
-    help="PortKeeper : lister, vérifier et libérer les ports utilisés localement.",
+    help="YoucaPort : lister, vérifier et libérer les ports utilisés localement.",
     no_args_is_help=False,
 )
 
@@ -29,7 +29,7 @@ app.add_typer(app_profile, name="profile")
 def _callback_version(valeur: bool) -> None:
     """Affiche la version puis quitte lorsque --version est fourni."""
     if valeur:
-        typer.echo(f"portkeeper {__version__}")
+        typer.echo(f"youcaport {__version__}")
         raise typer.Exit()
 
 
@@ -45,7 +45,7 @@ def principal(
         callback=_callback_version,
     ),
 ) -> None:
-    """PortKeeper : gestion simple des ports réseau locaux."""
+    """YoucaPort : gestion simple des ports réseau locaux."""
     if ctx.invoked_subcommand is None:
         try:
             lancer_menu()

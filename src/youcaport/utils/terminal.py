@@ -7,9 +7,9 @@ from rich.panel import Panel
 from rich.prompt import Confirm, Prompt
 from rich.table import Table
 
-from portkeeper.core.port_manager import InfoPort
-from portkeeper.core.process_manager import ProcessusIntrouvableError
-from portkeeper.core.validator import PortKeeperError
+from youcaport.core.port_manager import InfoPort
+from youcaport.core.process_manager import ProcessusIntrouvableError
+from youcaport.core.validator import YoucaPortError
 
 _console = Console()
 
@@ -104,7 +104,7 @@ def afficher_exception(exc: Exception) -> None:
     """
     if isinstance(exc, ProcessusIntrouvableError):
         afficher_succes(str(exc))
-    elif isinstance(exc, PortKeeperError):
+    elif isinstance(exc, YoucaPortError):
         afficher_erreur(str(exc))
     else:
         afficher_erreur(f"Erreur inattendue : {type(exc).__name__} — {exc}")

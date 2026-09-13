@@ -9,24 +9,24 @@ from dataclasses import dataclass
 
 import psutil
 
-from portkeeper.core.validator import PortKeeperError
+from youcaport.core.validator import YoucaPortError
 
 TEMPS_ATTENTE_ARRET = 3.0
 
 MESSAGE_PERMISSION = (
-    "Permission insuffisante. PortKeeper ne peut pas accéder aux informations de ce processus."
+    "Permission insuffisante. YoucaPort ne peut pas accéder aux informations de ce processus."
 )
 
 
-class PermissionSystemeError(PortKeeperError):
+class PermissionSystemeError(YoucaPortError):
     """Le système a refusé l'accès aux informations ou à l'arrêt d'un processus."""
 
 
-class ProcessusIntrouvableError(PortKeeperError):
+class ProcessusIntrouvableError(YoucaPortError):
     """Le processus n'existe plus (déjà arrêté)."""
 
 
-class ProcessusArretImpossibleError(PortKeeperError):
+class ProcessusArretImpossibleError(YoucaPortError):
     """Le processus n'a pas pu être arrêté malgré les tentatives."""
 
 
@@ -67,7 +67,7 @@ def construire_processus(pid: int) -> Processus | None:
     """Construit une description d'un processus, ou None s'il n'existe plus."""
     try:
         proc = psutil.Process(pid)
-    except psutil.NoSuchProcess:
+    except (psutil.NoSuchProcess, ValueError):
         return None
 
     nom = _essayer(proc.name, "inconnu")

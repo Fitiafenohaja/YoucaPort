@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import os
 
-from portkeeper.core import port_manager, process_manager
-from portkeeper.core.port_manager import InfoPort
-from portkeeper.core.process_manager import Processus
-from portkeeper.core.validator import PortKeeperError
+from youcaport.core import port_manager, process_manager
+from youcaport.core.port_manager import InfoPort
+from youcaport.core.process_manager import Processus
+from youcaport.core.validator import YoucaPortError
 
 
-class ProjetIntrouvableError(PortKeeperError):
+class ProjetIntrouvableError(YoucaPortError):
     """Le chemin fourni ne correspond à aucun dossier existant."""
 
 

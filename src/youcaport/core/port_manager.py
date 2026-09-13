@@ -4,15 +4,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from portkeeper.core import process_manager
-from portkeeper.core.process_manager import Processus, ProcessusArretImpossibleError
-from portkeeper.core.validator import PortKeeperError, valider_port
+from youcaport.core import process_manager
+from youcaport.core.process_manager import Processus, ProcessusArretImpossibleError
+from youcaport.core.validator import YoucaPortError, valider_port
 
 OCCUPE = "OCCUPE"
 LIBRE = "LIBRE"
 
 
-class PortNonOccupeError(PortKeeperError):
+class PortNonOccupeError(YoucaPortError):
     """Le port demandé n'est utilisé par aucun processus."""
 
 

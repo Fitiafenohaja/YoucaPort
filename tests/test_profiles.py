@@ -6,9 +6,9 @@ from pathlib import Path
 
 import pytest
 
-from portkeeper.core import profiles
-from portkeeper.core.profiles import ProfilInexistantError, ProfilInvalideError
-from portkeeper.core.validator import PortInvalideError
+from youcaport.core import profiles
+from youcaport.core.profiles import ProfilInexistantError, ProfilInvalideError
+from youcaport.core.validator import PortInvalideError
 
 
 def test_ajouter_et_lister(tmp_path: Path) -> None:

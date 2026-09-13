@@ -1,4 +1,4 @@
-# PortKeeper
+# YoucaPort
 
 **Gestionnaire de ports en ligne de commande** — trouve, vérifie et libère les ports réseau
 utilisés localement, sans avoir besoin de connaître `lsof`, `ss`, `netstat` ou `kill`.
@@ -19,7 +19,7 @@ Choix :
 
 ---
 
-## Pourquoi PortKeeper ?
+## Pourquoi YoucaPort ?
 
 Quand vous lancez un projet (Next.js, FastAPI, PostgreSQL, Vite...), il arrive que le port
 soit déjà occupé :
@@ -29,7 +29,7 @@ EADDRINUSE: address already in use
 ```
 
 Plutôt que de jongler avec `lsof -i :3000`, `kill -9 <PID>` et autres commandes système,
-PortKeeper centralise tout dans une interface simple :
+YoucaPort centralise tout dans une interface simple :
 
 ```text
 PORT    APPLICATION    PID      STATUS
@@ -47,23 +47,23 @@ PORT    APPLICATION    PID      STATUS
 ### Avec pipx (recommandé)
 
 ```bash
-pipx install portkeeper
+pipx install youcaport
 ```
 
 ### Avec pip
 
 ```bash
-pip install portkeeper
+pip install youcaport
 ```
 
 ### Depuis les sources
 
 ```bash
-git clone https://github.com/<votre-compte>/portkeeper.git
-cd portkeeper
+git clone https://github.com/<votre-compte>/youcaport.git
+cd youcaport
 poetry install
 poetry build
-pipx install dist/portkeeper-*.whl
+pipx install dist/youcaport-*.whl
 ```
 
 **Prérequis** : Python 3.11+. Plateforme prioritaire : **Linux** (Windows/macOS non testés
@@ -76,7 +76,7 @@ pour cette version, mais l'architecture est déjà abstraite pour une extension 
 ### Menu interactif
 
 ```bash
-portkeeper
+youcaport
 ```
 
 Lance le menu principal : ports utilisés / vérifier un port / libérer un port / quitter.
@@ -85,12 +85,12 @@ Lance le menu principal : ports utilisés / vérifier un port / libérer un port
 
 ```bash
 # Lister tous les ports utilisés
-portkeeper status
+youcaport status
 ```
 
 ```bash
 # Vérifier un port précis
-portkeeper check 3000
+youcaport check 3000
 ```
 
 ```text
@@ -103,7 +103,7 @@ PID          : 447315
 
 ```bash
 # Libérer un port (avec confirmation obligatoire)
-portkeeper free 3000
+youcaport free 3000
 ```
 
 ```text
@@ -118,8 +118,8 @@ Voulez-vous arrêter cette application ?
 
 ```bash
 # Aide et version
-portkeeper --help
-portkeeper --version
+youcaport --help
+youcaport --version
 ```
 
 ---
@@ -132,7 +132,7 @@ Quand un port est occupé, `check` propose automatiquement des ports libres proc
 Une commande dédiée existe aussi :
 
 ```bash
-portkeeper suggest 3000 --count 5
+youcaport suggest 3000 --count 5
 ```
 
 ```text
@@ -141,13 +141,13 @@ Ports libres suggérés : 3001, 3002, 3003, 3004, 3005
 
 ### Profils de projets — Port Profiles (V2)
 
-Associez des ports à des projets nommés (stockage : `~/.config/portkeeper/profiles.json`) :
+Associez des ports à des projets nommés (stockage : `~/.config/youcaport/profiles.json`) :
 
 ```bash
-portkeeper profile add frontend 3000     # associe le port 3000 au projet "frontend"
-portkeeper profile list                   # liste les profils
-portkeeper profile show frontend          # état des ports d'un profil
-portkeeper profile remove frontend        # supprime le profil
+youcaport profile add frontend 3000     # associe le port 3000 au projet "frontend"
+youcaport profile list                   # liste les profils
+youcaport profile show frontend          # état des ports d'un profil
+youcaport profile remove frontend        # supprime le profil
 ```
 
 ### Ports d'un projet — Project Management (V3)
@@ -155,9 +155,9 @@ portkeeper profile remove frontend        # supprime le profil
 Détecte automatiquement les ports utilisés par les processus tournant depuis un dossier :
 
 ```bash
-portkeeper project /chemin/vers/mon/projet
+youcaport project /chemin/vers/mon/projet
 # ou, depuis le dossier du projet :
-portkeeper project .
+youcaport project .
 ```
 
 ### Dashboard web local (V5)
@@ -165,8 +165,8 @@ portkeeper project .
 Interface web locale (stdlib, aucune dépendance supplémentaire), auto-rechargée :
 
 ```bash
-portkeeper dashboard            # http://127.0.0.1:8421
-portkeeper dashboard --port 9000
+youcaport dashboard            # http://127.0.0.1:8421
+youcaport dashboard --port 9000
 ```
 
 Une API JSON est exposée sur `/api/ports`, pratique pour l'intégration.
@@ -175,14 +175,14 @@ Une API JSON est exposée sur `/api/ports`, pratique pour l'intégration.
 
 ```bash
 make binary       # ou : ./scripts/dev.sh binary
-./dist/portkeeper --version
+./dist/youcaport --version
 ```
 
 ---
 
 ## Fonctionnement de l'arrêt d'un processus
 
-PortKeeper ne tue jamais un processus brutalement par défaut :
+YoucaPort ne tue jamais un processus brutalement par défaut :
 
 1. Confirmation obligatoire (`y/N`) avec rappel de l'application, du PID et du port.
 2. Envoi d'un **SIGTERM** (arrêt propre).
@@ -198,14 +198,14 @@ avec un code de sortie approprié (`0` ou `1`).
 ## Architecture
 
 ```text
-portkeeper/
+youcaport/
 │
 ├── pyproject.toml        # source de vérité pour la version et les dépendances
 ├── poetry.lock
 ├── README.md
 ├── LICENSE
 │
-├── src/portkeeper/
+├── src/youcaport/
 │   ├── __init__.py        # version via importlib.metadata (repli tomllib en dev)
 │   ├── cli.py              # commandes Typer (status/check/free/suggest/project/dashboard/profile)
 │   ├── menu.py             # menu interactif + sous-menu — pas de logique métier
@@ -285,7 +285,7 @@ git push origin v0.1.0
 
 ## Limites de cette version
 
-Comme prévu par le cahier des charges, PortKeeper reste volontairement simple :
+Comme prévu par le cahier des charges, YoucaPort reste volontairement simple :
 
 - **Windows / macOS** : l'abstraction existe dans `process_manager.py` (psutil), mais ces
   plateformes ne sont pas testées — seule Linux est validée.

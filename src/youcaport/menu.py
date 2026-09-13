@@ -1,10 +1,10 @@
-"""Menu interactif principal de PortKeeper."""
+"""Menu interactif principal de YoucaPort."""
 
 from __future__ import annotations
 
-from portkeeper.core import port_manager, suggester
-from portkeeper.core.port_manager import LIBRE
-from portkeeper.utils import terminal
+from youcaport.core import port_manager, suggester
+from youcaport.core.port_manager import LIBRE
+from youcaport.utils import terminal
 
 
 def lancer_menu() -> None:

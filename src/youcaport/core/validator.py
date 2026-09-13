@@ -8,11 +8,11 @@ PORT_MAX = 65535
 MESSAGE_PORT_INVALIDE = "Numéro de port invalide. Veuillez entrer un port compris entre 1 et 65535."
 
 
-class PortKeeperError(Exception):
-    """Erreur de base commune a toutes les erreurs de PortKeeper."""
+class YoucaPortError(Exception):
+    """Erreur de base commune a toutes les erreurs de YoucaPort."""
 
 
-class PortInvalideError(PortKeeperError):
+class PortInvalideError(YoucaPortError):
     """Le numéro de port fourni est hors des limites autorisées (1-65535)."""
 
 

@@ -6,8 +6,8 @@ import socket
 
 import pytest
 
-from portkeeper.core import process_manager, suggester
-from portkeeper.core.validator import PortInvalideError
+from youcaport.core import process_manager, suggester
+from youcaport.core.validator import PortInvalideError
 
 
 def test_suggerer_ports_libres() -> None:

@@ -6,17 +6,17 @@ import json
 import os
 from pathlib import Path
 
-from portkeeper.core.validator import PortKeeperError, valider_port
+from youcaport.core.validator import YoucaPortError, valider_port
 
-_DOSSIER_CONFIG = "portkeeper"
+_DOSSIER_CONFIG = "youcaport"
 _FICHIER_PROFILS = "profiles.json"
 
 
-class ProfilInvalideError(PortKeeperError):
+class ProfilInvalideError(YoucaPortError):
     """Nom de profil ou données de profil invalides."""
 
 
-class ProfilInexistantError(PortKeeperError):
+class ProfilInexistantError(YoucaPortError):
     """Le profil demandé n'existe pas."""
 
 

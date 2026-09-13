@@ -1,4 +1,4 @@
-"""Interface web locale de PortKeeper (V5).
+"""Interface web locale de YoucaPort (V5).
 
 Le calcul des données reste dans core/ : ce module ne fait que servir du HTML/JSON.
 """
@@ -9,15 +9,15 @@ import json
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse
 
-from portkeeper.core import port_manager
-from portkeeper.core.port_manager import InfoPort
-from portkeeper.utils import terminal
+from youcaport.core import port_manager
+from youcaport.core.port_manager import InfoPort
+from youcaport.utils import terminal
 
 
 def lancer_dashboard(port: int = 8421) -> None:
     """Démarre le serveur web local jusqu'à interruption (Ctrl+C)."""
     serveur = ThreadingHTTPServer(("127.0.0.1", port), _Gestionnaire)
-    terminal.afficher_information(f"Dashboard PortKeeper : http://127.0.0.1:{port}")
+    terminal.afficher_information(f"Dashboard YoucaPort : http://127.0.0.1:{port}")
     terminal.afficher_information("Appuyez sur Ctrl+C pour arrêter le serveur.")
 
     try:
@@ -83,7 +83,7 @@ def _page_html(infos: list[InfoPort]) -> str:
 <head>
 <meta charset="utf-8">
 <meta http-equiv="refresh" content="5">
-<title>PortKeeper — Ports utilisés</title>
+<title>YoucaPort — Ports utilisés</title>
 <style>
   body {{ font-family: system-ui, sans-serif; margin: 2rem; background: #0f172a; color: #e2e8f0; }}
   h1 {{ color: #22d3ee; }}
@@ -94,7 +94,7 @@ def _page_html(infos: list[InfoPort]) -> str:
 </style>
 </head>
 <body>
-<h1>PortKeeper</h1>
+<h1>YoucaPort</h1>
 <p>Ports utilisés : <strong>{total}</strong></p>
 <table>
 <tr><th>PORT</th><th>APPLICATION</th><th>PID</th><th>STATUS</th></tr>

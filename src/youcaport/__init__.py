@@ -1,4 +1,4 @@
-"""PortKeeper — gestionnaire de ports en ligne de commande."""
+"""YoucaPort — gestionnaire de ports en ligne de commande."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from pathlib import Path
 def _version() -> str:
     """Renvoie la version du paquet (source de vérité : pyproject.toml)."""
     try:
-        return version("portkeeper")
+        return version("youcaport")
     except PackageNotFoundError:
         chemin_pyproject = Path(__file__).resolve().parents[2] / "pyproject.toml"
         with chemin_pyproject.open("rb") as fichier:

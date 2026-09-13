@@ -11,8 +11,8 @@ import time
 import psutil
 import pytest
 
-from portkeeper.core import process_manager
-from portkeeper.core.process_manager import (
+from youcaport.core import process_manager
+from youcaport.core.process_manager import (
     PermissionSystemeError,
     ProcessusIntrouvableError,
 )
@@ -48,6 +48,10 @@ def test_construire_processus_courant() -> None:
 
 def test_construire_processus_pid_inexistant() -> None:
     assert process_manager.construire_processus(_PID_INEXISTANT) is None
+
+
+def test_construire_processus_pid_invalide() -> None:
+    assert process_manager.construire_processus(-1) is None
 
 
 def test_lister_connexions_contient_notre_socket(socket_ecoute: socket.socket) -> None:

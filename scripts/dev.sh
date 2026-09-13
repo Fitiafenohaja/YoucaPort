@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Raccourcis de développement PortKeeper.
+# Raccourcis de développement YoucaPort.
 # Usage : ./scripts/dev.sh {install|lock|test|lint|format|build}
 
 set -euo pipefail

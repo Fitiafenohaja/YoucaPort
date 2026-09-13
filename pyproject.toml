@@ -1,11 +1,11 @@
 [project]
-name = "portkeeper"
+name = "youcaport"
 version = "0.1.0"
 description = "CLI pour lister, vérifier et libérer les ports réseau utilisés localement."
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11,<3.14"
-authors = [{ name = "DevPortKeeper" }]
+authors = [{ name = "Fitiafenohaja" }]
 dependencies = [
     "typer>=0.12,<1.0",
     "rich>=13.0,<14.0",
@@ -20,10 +20,10 @@ classifiers = [
 ]
 
 [project.scripts]
-portkeeper = "portkeeper.cli:app"
+youcaport = "youcaport.cli:app"
 
 [tool.poetry]
-packages = [{ include = "portkeeper", from = "src" }]
+packages = [{ include = "youcaport", from = "src" }]
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=8.0,<9.0"
@@ -44,7 +44,7 @@ target-version = "py311"
 select = ["E", "F", "I", "UP", "B", "C4", "SIM", "N"]
 
 [tool.ruff.lint.per-file-ignores]
-"src/portkeeper/cli.py" = ["B008"]
+"src/youcaport/cli.py" = ["B008"]
 
 [tool.ruff.format]
 quote-style = "double"
