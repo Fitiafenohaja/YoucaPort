@@ -59,7 +59,7 @@ pip install youcaport
 ### Depuis les sources
 
 ```bash
-git clone https://github.com/<votre-compte>/youcaport.git
+git clone https://github.com/Fitiafenohaja/YoucaPort.git
 cd youcaport
 poetry install
 poetry build
