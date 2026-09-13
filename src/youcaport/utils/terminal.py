@@ -112,7 +112,7 @@ def afficher_exception(exc: Exception) -> None:
 
 def afficher_menu() -> None:
     """Affiche le menu principal en surbrillance."""
-    _console.print(Panel("[bold]PORTKEEPER[/bold]\nPort Manager CLI", border_style="cyan"))
+    _console.print(Panel("[bold]YOUCAPORT[/bold]\nGestionnaire de ports", border_style="cyan"))
     _console.print()
     _console.print("1. Ports utilisés")
     _console.print("2. Vérifier un port")
