@@ -3,6 +3,19 @@
 Merci de vouloir contribuer ! Ce guide décrit le workflow à suivre pour que tout le monde
 travaille sereinement sur `main`.
 
+## Demandez d'abord le feu vert
+
+Avant de vous lancer dans une PR, **annoncez votre intention** : ouvrez une
+[issue](https://github.com/Fitiafenohaja/YoucaPort/issues) (ou un commentaire sur une issue
+existante) décrivant ce que vous souhaitez faire. Le mainteneur en est **notifié par e-mail**
+et vous donne le feu vert — c'est aussi l'occasion de valider l'approche avant d'écrire du
+code. Les PR non annoncées risquent d'être refusées.
+
+Le compagnonnage est simple : le dépôt est public en **lecture**, tout le monde peut
+forker et proposer des PR, mais **rien ne fusionne sans l'approbation du mainteneur**
+(`main` est protégé). Pas d'intrusion silencieuse : chaque proposition est soumise à
+revue.
+
 ## Règles d'or
 
 1. **Jamais de poussée directe sur `main`** : la branche est protégée. Tout se fait par
