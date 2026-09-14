@@ -50,11 +50,11 @@ def lister_connexions_ecoute() -> list[tuple[int, int]]:
     """Renvoie la liste des couples (port, pid) actuellement en écoute.
 
     Lève PermissionSystemeError si les connexions réseau sont inaccessibles,
-    sauf sur macOS où un repli sur `netstat` évite de bloquer l'outil.
+    sauf sur macOS où des replis système (lsof puis netstat) évitent de bloquer.
     """
     try:
         connexions = psutil.net_connections(kind="tcp")
-    except psutil.AccessDenied as exc:
+    except (psutil.AccessDenied, OSError) as exc:
         if sys.platform == "darwin":
             return _lister_connexions_macos()
         raise PermissionSystemeError(MESSAGE_PERMISSION) from exc
@@ -72,21 +72,58 @@ def lister_connexions_ecoute() -> list[tuple[int, int]]:
 
 
 def _lister_connexions_macos() -> list[tuple[int, int]]:
-    """Repli macOS sans privilèges : `lsof` (PID réel pour ses propres processus)."""
+    """Repli macOS sans privilèges : lsof (PID réels) puis netstat (ports seuls)."""
+    sortie = _commande_systeme(["lsof", "-nP", "-iTCP", "-sTCP:LISTEN"])
+    if sortie is not None:
+        return _lister_connexions_macos_from(sortie)
+
+    sortie = _commande_systeme(["netstat", "-an"])
+    if sortie is not None:
+        return _lister_connexions_macos_netstat(sortie)
+
+    raise PermissionSystemeError(MESSAGE_PERMISSION)
+
+
+def _commande_systeme(commande: list[str]) -> str | None:
+    """Exécute une commande système, None si indisponible ou sans sortie utile."""
     try:
         resultat = subprocess.run(
-            ["lsof", "-nP", "-iTCP", "-sTCP:LISTEN"],
+            commande,
             capture_output=True,
             text=True,
             timeout=15,
         )
-    except (OSError, subprocess.SubprocessError) as exc:
-        raise PermissionSystemeError(MESSAGE_PERMISSION) from exc
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if resultat.returncode != 0 or not resultat.stdout:
+        return None
+    return resultat.stdout
 
-    if resultat.returncode != 0 and not resultat.stdout:
-        raise PermissionSystemeError(MESSAGE_PERMISSION)
 
-    return _lister_connexions_macos_from(resultat.stdout)
+def _lister_connexions_macos_netstat(sortie: str) -> list[tuple[int, int]]:
+    """Parse la sortie `netstat -an` en couples (port, -1)."""
+    resultats: set[tuple[int, int]] = set()
+    for ligne in sortie.splitlines():
+        champs = ligne.split()
+        if len(champs) < 6:
+            continue
+        if not champs[0].startswith("tcp") or champs[-1] != "LISTEN":
+            continue
+        port = _port_netstat(champs[3])
+        if port is not None:
+            resultats.add((port, -1))
+    return sorted(resultats, key=lambda element: element[0])
+
+
+def _port_netstat(local: str) -> int | None:
+    """Extrait le port des adresses netstat type `*.8080` ou `127.0.0.1.631`."""
+    if "." not in local:
+        return None
+    suffixe = local.rsplit(".", 1)[1]
+    if not suffixe.isdigit():
+        return None
+    port = int(suffixe)
+    return port if 1 <= port <= 65535 else None
 
 
 def _lister_connexions_macos_from(sortie: str) -> list[tuple[int, int]]:

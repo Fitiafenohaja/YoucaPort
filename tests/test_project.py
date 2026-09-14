@@ -25,7 +25,7 @@ def _port_libre() -> int:
 def _attendre_port_occupe(port: int, delai_max: float = 5.0) -> None:
     debut = time.monotonic()
     while time.monotonic() - debut < delai_max:
-        if process_manager.rechercher_premier_processus(port) is not None:
+        if process_manager.port_en_ecoute(port):
             return
         time.sleep(0.05)
     raise AssertionError(f"Le port {port} n'est jamais devenu occupé.")
@@ -36,6 +36,7 @@ def test_dossier_introuvable() -> None:
         lister_ports_projet("/chemin/qui/n/existe/pas/12345")
 
 
+@pytest.mark.usefixtures("processus_identifiables")
 def test_detecte_port_du_projet(tmp_path: Path) -> None:
     port = _port_libre()
     code = (

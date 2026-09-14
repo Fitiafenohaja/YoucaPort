@@ -56,6 +56,7 @@ def test_verifier_port_libre() -> None:
     assert resultat.processus is None
 
 
+@pytest.mark.usefixtures("processus_identifiables")
 def test_verifier_port_occupe(socket_ecoute: socket.socket) -> None:
     port = socket_ecoute.getsockname()[1]
     resultat = port_manager.verifier_port(port)
@@ -79,6 +80,7 @@ def test_liberer_port_deja_libre() -> None:
         port_manager.liberer_port(port)
 
 
+@pytest.mark.usefixtures("processus_identifiables")
 def test_liberer_port_occupe() -> None:
     port = _port_libre()
     code = (
@@ -101,6 +103,7 @@ def test_liberer_port_occupe() -> None:
             enfant.kill()
 
 
+@pytest.mark.usefixtures("processus_identifiables")
 def test_liberer_port_processus_deja_arrete(socket_ecoute: socket.socket, monkeypatch) -> None:
     port = socket_ecoute.getsockname()[1]
 
@@ -134,7 +137,7 @@ def _attendre_port_occupe(port: int, delai_max: float = 5.0) -> None:
     """Attend que le port soit en écoute, sinon échoue le test."""
     debut = time.monotonic()
     while time.monotonic() - debut < delai_max:
-        if process_manager.rechercher_premier_processus(port) is not None:
+        if process_manager.port_en_ecoute(port):
             return
         time.sleep(0.05)
     raise AssertionError(f"Le port {port} n'est jamais devenu occupé.")

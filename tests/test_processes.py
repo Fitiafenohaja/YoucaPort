@@ -40,6 +40,18 @@ def test_lister_connexions_macos_parse_lsof() -> None:
     assert (8080, -1) in connexions
 
 
+def test_lister_connexions_macos_parse_netstat() -> None:
+    sortie = (
+        "Proto Recv-Q Send-Q  Local Address          Foreign Address        (state)\n"
+        "tcp4       0      0  *.5540                 *.*                    LISTEN\n"
+        "tcp46      0      0  127.0.0.1.631          *.*                    LISTEN\n"
+        "tcp4       0      0  *.5540                 *.*                    ESTABLISHED\n"
+    )
+    connexions = process_manager._lister_connexions_macos_netstat(sortie)
+    assert (5540, -1) in connexions
+    assert (631, -1) in connexions
+
+
 def _port_libre() -> int:
     """Renvoie un port libre en réservant puis relâchant un socket."""
     ecoute = socket.socket()
@@ -74,12 +86,14 @@ def test_construire_processus_pid_invalide() -> None:
     assert process_manager.construire_processus(-1) is None
 
 
+@pytest.mark.usefixtures("processus_identifiables")
 def test_lister_connexions_contient_notre_socket(socket_ecoute: socket.socket) -> None:
     port = socket_ecoute.getsockname()[1]
     connexions = process_manager.lister_connexions_ecoute()
     assert (port, os.getpid()) in connexions
 
 
+@pytest.mark.usefixtures("processus_identifiables")
 def test_rechercher_processus_par_port(socket_ecoute: socket.socket) -> None:
     port = socket_ecoute.getsockname()[1]
     processus = process_manager.rechercher_premier_processus(port)
@@ -92,6 +106,7 @@ def test_rechercher_processus_port_libre() -> None:
     assert process_manager.rechercher_premier_processus(port) is None
 
 
+@pytest.mark.usefixtures("processus_identifiables")
 def test_arreter_processus_grace() -> None:
     port = _port_libre()
     code = (
@@ -137,7 +152,7 @@ def _attendre_port_occupe(port: int, delai_max: float = 5.0) -> None:
     """Attend que le port soit en écoute, sinon échoue le test."""
     debut = time.monotonic()
     while time.monotonic() - debut < delai_max:
-        if process_manager.rechercher_premier_processus(port) is not None:
+        if process_manager.port_en_ecoute(port):
             return
         time.sleep(0.05)
     raise AssertionError(f"Le port {port} n'est jamais devenu occupé.")
