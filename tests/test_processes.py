@@ -20,12 +20,13 @@ from youcaport.core.process_manager import (
 _PID_INEXISTANT = 9_999_999_99
 
 
-def test_port_macos_formats() -> None:
-    assert process_manager._port_macos("*.8080") == 8080
-    assert process_manager._port_macos("127.0.0.1.631") == 631
-    assert process_manager._port_macos("*.*") is None
-    assert process_manager._port_macos("mailto") is None
-    assert process_manager._port_macos("*.99999") is None
+def test_port_lsof_formats() -> None:
+    assert process_manager._port_lsof("127.0.0.1:3000") == 3000
+    assert process_manager._port_lsof("*:8080") == 8080
+    assert process_manager._port_lsof("[::1]:7000") == 7000
+    assert process_manager._port_lsof("no-port") is None
+    assert process_manager._port_lsof("*:99999") is None
+    assert process_manager._port_lsof(None) is None
 
 
 def _port_libre() -> int:

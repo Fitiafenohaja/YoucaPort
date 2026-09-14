@@ -72,10 +72,10 @@ def lister_connexions_ecoute() -> list[tuple[int, int]]:
 
 
 def _lister_connexions_macos() -> list[tuple[int, int]]:
-    """Repli macOS sans privilèges : `netstat -an`, processus inconnus (pid -1)."""
+    """Repli macOS sans privilèges : `lsof` (PID réel pour ses propres processus)."""
     try:
         resultat = subprocess.run(
-            ["netstat", "-an"],
+            ["lsof", "-nP", "-iTCP", "-sTCP:LISTEN"],
             capture_output=True,
             text=True,
             timeout=15,
@@ -89,23 +89,23 @@ def _lister_connexions_macos() -> list[tuple[int, int]]:
     resultats: set[tuple[int, int]] = set()
     for ligne in resultat.stdout.splitlines():
         champs = ligne.split()
-        if len(champs) < 6 or not champs[0].startswith("tcp"):
+        if len(champs) < 6 or not champs[0].isupper():
             continue
-        if champs[-1] != "LISTEN":
-            continue
-        port = _port_macos(champs[3])
+        pid = int(champs[1]) if champs[1].isdigit() else -1
+        adresse = next((champ for champ in reversed(champs) if ":" in champ), None)
+        port = _port_lsof(adresse)
         if port is None:
             continue
-        resultats.add((port, -1))
+        resultats.add((port, pid))
 
     return sorted(resultats, key=lambda element: element[0])
 
 
-def _port_macos(local: str) -> int | None:
-    """Extrait le port des adresses macOS type `*.8080` ou `127.0.0.1.631`."""
-    if "." not in local:
+def _port_lsof(local: str | None) -> int | None:
+    """Extrait le port des adresses lsof type `127.0.0.1:3000` ou `*:8080`."""
+    if local is None or ":" not in local:
         return None
-    suffixe = local.rsplit(".", 1)[1]
+    suffixe = local.rsplit(":", 1)[1]
     if not suffixe.isdigit():
         return None
     port = int(suffixe)
