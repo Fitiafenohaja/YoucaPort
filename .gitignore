@@ -23,6 +23,9 @@ htmlcov/
 # Divers
 .DS_Store
 
+# Documents internes (ne pas publier)
+cahier-des-charges-portkeeper.md
+
 # IDE
 .idea/
 .vscode/
