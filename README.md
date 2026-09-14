@@ -322,7 +322,7 @@ git push origin v0.1.0      # déclenche quality + windows + macOS + publication
 
 ## Limites de cette version
 
-Conformément au cahier des charges, YoucaPort reste volontairement simple :
+Volontairement simple et léger, YoucaPort se concentre sur l'essentiel :
 
 - **Dashboard lourd / comptes / base de données** : hors périmètre ; le dashboard est
   volontairement léger (page locale, stdlib).
