@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from youcaport import __version__
 from youcaport.core import port_manager, privileges, process_manager, suggester
 from youcaport.core.port_manager import LIBRE, InfoPort
 from youcaport.utils import terminal
@@ -10,7 +11,7 @@ from youcaport.utils import terminal
 def lancer_menu() -> None:
     """Lance la boucle du menu interactif jusqu'à ce que l'utilisateur quitte."""
     while True:
-        terminal.afficher_menu()
+        terminal.afficher_menu(__version__)
         choix = terminal.demander_choix()
 
         if choix is None or choix == "4":

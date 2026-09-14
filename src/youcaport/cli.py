@@ -25,8 +25,14 @@ from youcaport.utils import terminal
 
 app = typer.Typer(
     add_completion=False,
-    help="YoucaPort : lister, vérifier et libérer les ports utilisés localement.",
+    rich_markup_mode="rich",
+    help="**YoucaPort** : lister, vérifier et libérer les ports utilisés localement.",
     no_args_is_help=False,
+    epilog=(
+        "Documentation : https://github.com/Fitiafenohaja/YoucaPort\n"
+        "Astuce : sous Linux, ajoutez `--sudo` pour identifier puis arrêter "
+        "aussi les ports protégés (root/docker)."
+    ),
 )
 
 app_profile = typer.Typer(help="Gère les profils de projets (association ports ↔ projets).")
@@ -81,6 +87,7 @@ def status(
         return
 
     terminal.afficher_ports(infos)
+    terminal.afficher_resume_ports(infos)
 
 
 @app.command()
@@ -105,6 +112,10 @@ def check(
         terminal.afficher_port_libre(info)
     else:
         terminal.afficher_port_occupe(info)
+        if info.processus is None and not sudo and privileges.sudo_disponible():
+            terminal.afficher_information(
+                f"Astuce : `youcaport check {info.port} --sudo` identifie ce processus protégé."
+            )
         terminal.afficher_suggestions(suggester.suggerer_ports_libres(info.port))
 
 
@@ -130,6 +141,11 @@ def free(
     mapping: dict[int, dict] = {}
     if info.processus is None:
         if not sudo:
+            if privileges.sudo_disponible():
+                terminal.afficher_information(
+                    f"Astuce : `youcaport free --sudo {info.port}` arrête aussi "
+                    "les processus protégés (root/docker)."
+                )
             _sortie_erreur(
                 PortSansProcessusError(
                     f"Le port {info.port} est occupé mais aucun processus n'y est associé."

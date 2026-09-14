@@ -111,14 +111,32 @@ def afficher_exception(exc: Exception) -> None:
         afficher_erreur(f"Erreur inattendue : {type(exc).__name__} — {exc}")
 
 
-def afficher_menu() -> None:
+def afficher_resume_ports(infos: list[InfoPort]) -> None:
+    """Affiche un résumé synthétique après le tableau des ports."""
+    identifiés = sum(1 for info in infos if info.processus is not None)
+    inconnus = len(infos) - identifiés
+    message = f"{len(infos)} port(s) en écoute — {identifiés} processus identifiés"
+    if inconnus:
+        message += f", {inconnus} non identifiés (root/docker)"
+    _console.print(f"[dim]{message}[/dim]")
+
+
+def afficher_menu(version: str = "") -> None:
     """Affiche le menu principal en surbrillance."""
-    _console.print(Panel("[bold]YOUCAPORT[/bold]\nGestionnaire de ports", border_style="cyan"))
+    sous_titre = "Gestionnaire de ports"
+    if version:
+        sous_titre += f" — v{version}"
+    _console.print(Panel(f"[bold]YOUCAPORT[/bold]\n{sous_titre}", border_style="cyan"))
     _console.print()
     _console.print("1. Ports utilisés")
     _console.print("2. Vérifier un port")
     _console.print("3. Libérer un port")
     _console.print("4. Quitter")
+    _console.print()
+    _console.print(
+        "[dim]Astuce : sous Linux, `free 3000 --sudo` libère aussi les ports "
+        "protégés (root/docker).[/dim]"
+    )
     _console.print()
 
 
