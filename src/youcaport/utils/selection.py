@@ -62,7 +62,7 @@ def _lire_octet(temporisation: float | None = None) -> int | None:
             return ord(msvcrt.getwch())
         return None
     if select.select([sys.stdin], [], [], temporisation or 0)[0]:
-        octet = sys.stdin.buffer.read(1)
+        octet = os.read(sys.stdin.fileno(), 1)
         return octet[0] if octet else None
     return None
 
