@@ -90,6 +90,8 @@ python3 python3-venv` (Linux Debian/Ubuntu), `brew install python` (macOS).
 
 `pipx` installe YoucaPort dans son propre environnement isolé et place la commande
 `youcaport` dans votre PATH. C'est la méthode la plus sûre et la plus simple à mettre à jour.
+Pas encore de pipx ? Installez-le avec la commande de votre OS ci-dessous — ou
+passez directement aux options 2 (uv) ou 3 (venv) si vous préférez.
 
 ```bash
 # Linux (Debian/Ubuntu)
