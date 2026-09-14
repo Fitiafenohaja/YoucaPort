@@ -71,44 +71,122 @@ et en vous proposant les **ports libres** proches en cas de conflit.
 
 ## Installation
 
-### pipx (recommandé pour une CLI)
-
-Sur Debian/Ubuntu, `pip install` global refuse d'installer dans un système géré
-(externally-managed, PEP 668) : `pipx` crée un environnement isolé dédié à la CLI.
+**Prérequis** : **Python 3.11 à 3.13** et une plateforme **Linux**, **Windows** ou **macOS**.
+Vérifiez avant d'installer :
 
 ```bash
-sudo apt install pipx           # ou : brew install pipx
+python3 --version                  # ≥ 3.11 attendu (utilisez `python --version` sur Windows)
+```
+
+Si Python n'est pas encore là : https://www.python.org/downloads/ — ou `sudo apt install
+python3 python3-venv` (Linux Debian/Ubuntu), `brew install python` (macOS).
+
+> **Remarque PEP 668** : sur les systèmes Linux « gérés » (Debian/Ubuntu 23.10+, Arch,
+> Fedora 35+...), `pip install` global est refusé. Inutile de passer par
+> `--break-system-packages` : utilisez simplement `pipx`, `uv` ou un environnement virtuel
+> ci-dessous.
+
+### Option 1 — pipx (recommandé pour une CLI)
+
+`pipx` installe YoucaPort dans son propre environnement isolé et place la commande
+`youcaport` dans votre PATH. C'est la méthode la plus sûre et la plus simple à mettre à jour.
+
+```bash
+# Linux (Debian/Ubuntu)
+sudo apt install pipx
+pipx ensurepath                    # ajoute ~/.local/bin à votre PATH
+
+# macOS
+brew install pipx
+
+# Windows (si pip est déjà installé)
+python -m pip install --user pipx
+python -m pipx ensurepath
+
+# partout ensuite :
 pipx install youcaport
 ```
 
-### pip (environnement virtuel)
+Fermez puis rouvrez votre terminal, et vérifiez :
+
+```bash
+youcaport --version                # ex. : youcaport 0.1.4
+youcaport status                   # premiers ports en écoute identifiés
+```
+
+> **Essayer sans installer** : `pipx run youcaport status` exécute la dernière version
+> publiée sans l'installer durablement.
+
+### Option 2 — uv (alternative plus rapide)
+
+[uv](https://docs.astral.sh/uv/) (écrit en Rust) est une alternative très rapide à
+pip/pipx, gérée comme un simple binaire :
+
+```bash
+# Linux/macOS
+curl -LsSf https://astral.sh/uv/install.sh | sh
+# ou : brew install uv
+
+# Windows (PowerShell)
+#   powershell -ExecutionPolicy bypass -c "irm https://astral.sh/uv/install.ps1 | iex"
+#   ou : winget install astral-sh.uv
+
+uv tool install youcaport          # ou sans installation durable : uv tool run youcaport status
+```
+
+### Option 3 — pip dans un environnement virtuel
 
 ```bash
 python3 -m venv ~/youcaport-venv
-~/youcaport-venv/bin/pip install youcaport
+~/youcaport-venv/bin/pip install --upgrade youcaport
 ~/youcaport-venv/bin/youcaport --version
+
+# pour éviter de taper le chemin complet :
+source ~/youcaport-venv/bin/activate     # (Windows : ~\youcaport-venv\Scripts\activate)
+youcaport --version
 ```
 
-### Depuis les sources
+### Option 4 — Exécutable autonome (aucun Python requis)
+
+Chaque [release GitHub](https://github.com/Fitiafenohaja/YoucaPort/releases) peut joindre un
+binaire `youcaport` autonome (PyInstaller, ~12 Mo, construit sous Linux) :
+
+```bash
+./youcaport --help
+```
+
+Il s'exécute sans Python ni pip install. **Attention** : la publication PyPI est
+automatique en CI, mais la release GitHub (binaire) est créée manuellement — un écart de
+version peut exister entre les deux ; préférez pipx/uv/venv pour être sûr d'avoir la
+dernière version.
+
+### Depuis les sources (développeurs)
+
+Nécessite [Poetry ≥ 2.0](https://python-poetry.org) (le projet utilise le format
+`[project]`, PEP 621) :
 
 ```bash
 git clone https://github.com/Fitiafenohaja/YoucaPort.git
-cd youcaport
+cd YoucaPort
 poetry install
 poetry build
-pipx install dist/youcaport-*.whl
+pipx install dist/youcaport-*.whl        # ou : poetry run youcaport --version
 ```
 
-### Exécutable autonome
-
-Un binaire sans Python requis est joint à chaque [release GitHub](https://github.com/Fitiafenohaja/YoucaPort/releases) :
+### Mise à jour et désinstallation
 
 ```bash
-./dist/youcaport --help
+pipx upgrade youcaport            # ou : uv tool upgrade youcaport
+pipx uninstall youcaport          # ou : uv tool uninstall youcaport
 ```
 
-**Prérequis** : Python 3.11+. Plateformes supportées : **Linux**, **Windows**, **macOS**
-(couvertes par les jobs CI).
+### Dépannage
+
+| Symptôme | Cause probable | Remède |
+| --- | --- | --- |
+| `youcaport : commande introuvable` | `~/.local/bin` pas dans le PATH | `pipx ensurepath`, puis réouvrir le terminal (ou `source ~/.bashrc`) |
+| `error: externally-managed-environment` | système Linux « géré » (PEP 668) | utiliser pipx/uv/venv, jamais `--break-system-packages` |
+| `RuntimeError: impossible...` à l'installation | version de Python trop ancienne | mettre à jour Python (≥ 3.11) puis réinstaller |
 
 ---
 
