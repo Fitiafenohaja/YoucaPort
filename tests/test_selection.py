@@ -61,6 +61,7 @@ def _piloter(
     from youcaport.utils import selection
 
     sortie = io.StringIO()
+    monkeypatch.setattr(selection.os, "name", "posix")
     monkeypatch.setattr(selection.sys, "stdout", sortie)
     monkeypatch.setattr(selection, "_position_curseur", lambda: (3, 1))
     monkeypatch.setattr(selection, "_mode_saisie", nullcontext)

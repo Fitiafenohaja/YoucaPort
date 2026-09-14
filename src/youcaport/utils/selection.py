@@ -133,11 +133,15 @@ def _lire_action(
             return decode
 
 
-def _lire_action_windows() -> tuple[str, tuple[int, int] | str | int | None] | None:
+def _lire_action_windows(
+    temporisation: float = 0.1,
+) -> tuple[str, tuple[int, int] | str | int | None] | None:
     """Attend une action sur Windows (clavier via msvcrt ; souris non prise en charge)."""
     import msvcrt
+    import time
 
     if not msvcrt.kbhit():
+        time.sleep(min(temporisation, 0.1))
         return None
     touche = msvcrt.getwch()
     if touche in ("\x00", "\xe0"):
