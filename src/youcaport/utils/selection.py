@@ -20,6 +20,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 
 _ECHAP = "\x1b"
+_reste = bytearray()
 
 
 def _ecrire(texte: str) -> None:
@@ -47,7 +48,13 @@ def _mode_saisie() -> Iterator[None]:
 
 
 def _lire_octet(temporisation: float | None = None) -> int | None:
-    """Lit un octet de l'entrée standard, None si la temporisation expire."""
+    """Lit un octet de l'entrée standard, None si la temporisation expire.
+
+    Les octets mis en attente par ``_position_curseur`` (frappes tapées pendant
+    la sonde DSR) sont rejoués en priorité afin de ne perdre aucune saisie.
+    """
+    if _reste:
+        return _reste.pop(0)
     if os.name == "nt":
         import msvcrt
 
@@ -165,7 +172,11 @@ def _lire_action_windows(
 
 
 def _position_curseur() -> tuple[int, int] | None:
-    """Interroge la position du curseur (DSR 6) et renvoie (ligne, colonne)."""
+    """Interroge la position du curseur (DSR 6) et renvoie (ligne, colonne).
+
+    Les frappes qui arrivent pendant la sonde sont conservées dans ``_reste``
+    pour être rejouées par la boucle de saisie principale.
+    """
     _ecrire(f"{_ECHAP}[6n")
     reponse = b""
     while len(reponse) < 32:
@@ -177,7 +188,9 @@ def _position_curseur() -> tuple[int, int] | None:
             break
     correspondance = re.search(rb"(\d+);(\d+)R", reponse)
     if not correspondance:
+        _reste.extend(reponse)
         return None
+    _reste.extend(reponse[correspondance.end() :])
     return int(correspondance.group(1)), int(correspondance.group(2))
 
 
@@ -198,21 +211,55 @@ def _rendre_entete(titre: str) -> None:
     _ecrire(f"{_ECHAP}[36;1m{titre} :{_ECHAP}[0m\n")
 
 
-def _rendre_liste(options: list[tuple[str, str]], selection: int, debut: int) -> None:
-    """Redessine le bloc d'options à partir de la ligne donnée."""
+def _rendre_ligne_suivante(lignes: int) -> None:
+    """Remonte de ``lignes`` lignes pour revenir au haut du bloc."""
+    if lignes > 0:
+        _ecrire(f"{_ECHAP}[{lignes}A")
+
+
+def _rendre_liste(
+    options: list[tuple[str, str]],
+    selection: int,
+    premier: bool = False,
+) -> None:
+    """Redessine le bloc d'options par déplacement relatif (aucun saut absolu).
+
+    Le curseur se trouve toujours sur la ligne d'aide située sous le bloc au
+    début et à la fin de l'affichage. Un rendu qui n'est pas ``premier`` en
+    repart donc en remontant de ``len(options)`` lignes.
+    """
+    if not premier:
+        _rendre_ligne_suivante(len(options))
+    largeur = max(len(libelle) for _, libelle in options)
     for index, (_code, libelle) in enumerate(options):
-        curseur = "›" if index == selection else " "
-        style = _ECHAP + "[36;1m" if index == selection else _ECHAP + "[0m"
+        if index == selection:
+            style = f"{_ECHAP}[44;1m{_ECHAP}[97m"
+            curseur = f"{_ECHAP}[36;1m›{_ECHAP}[97m"
+        else:
+            style = _ECHAP + "[90m"
+            curseur = " "
         _ecrire(
-            f"{_ECHAP}[{debut + index};1H{_ECHAP}[2K"
-            f"{style} {curseur} {index + 1}. {libelle}{_ECHAP}[0m\n"
+            _ECHAP
+            + "[2K"
+            + style
+            + f" {curseur} {libelle.ljust(largeur)}  [{index + 1}]"
+            + _ECHAP
+            + "[0m\r\n"
         )
+    _ecrire(
+        _ECHAP + "[2K" + _ECHAP + "[37;90m"
+        "⏵ Flèches ↑/↓ ou numéro · Entrée valide · clic souris · q/Échap annule" + _ECHAP + "[0m"
+    )
 
 
-def _effacer_bloc(debut: int, lignes: int) -> None:
-    """Efface les lignes du bloc interactif."""
-    for index in range(lignes):
-        _ecrire(f"{_ECHAP}[{debut + index};1H{_ECHAP}[2K")
+def _effacer_bloc_relatif(lignes: int) -> None:
+    """Efface le bloc (options + aide) et replace le curseur en haut du bloc."""
+    _rendre_ligne_suivante(lignes)
+    for index in range(lignes + 1):
+        _ecrire(_ECHAP + "[2K")
+        if index < lignes:
+            _ecrire("\r\n")
+    _rendre_ligne_suivante(lignes)
 
 
 def menu_interactif(
@@ -228,14 +275,15 @@ def menu_interactif(
 
     _rendre_entete(titre)
     selection = 0
-    debut = 1
+    choix_final: tuple[str, str] | None = None
 
     try:
         _activer_souris()
         with _mode_saisie():
+            _reste.clear()
             position = _position_curseur()
-            debut = position[0] if position else 1
-            _rendre_liste(options, selection, debut)
+            ligne_debut = position[0] if position else None
+            _rendre_liste(options, selection, premier=True)
             while True:
                 action = _lire_action_windows() if os.name == "nt" else _lire_action()
                 if action is None:
@@ -244,23 +292,27 @@ def menu_interactif(
                 if nom in ("haut", "bas"):
                     pas = -1 if nom == "haut" else 1
                     selection = (selection + pas) % len(options)
-                    _rendre_liste(options, selection, debut)
+                    _rendre_liste(options, selection)
                 elif nom == "entree":
-                    return options[selection][0]
+                    choix_final = options[selection]
+                    return choix_final[0]
                 elif nom == "numero" and isinstance(valeur, str):
                     numero = int(valeur) - 1
                     if 0 <= numero < len(options):
-                        return options[numero][0]
-                elif nom == "souris" and isinstance(valeur, tuple):
-                    colonne, ligne = valeur
-                    if debut <= ligne < debut + len(options):
-                        return options[ligne - debut][0]
+                        choix_final = options[numero]
+                        return choix_final[0]
+                elif nom == "souris" and isinstance(valeur, tuple) and ligne_debut:
+                    _colonne, ligne = valeur
+                    if ligne_debut <= ligne < ligne_debut + len(options):
+                        choix_final = options[ligne - ligne_debut]
+                        return choix_final[0]
                 elif nom == "annuler":
                     return None
     except KeyboardInterrupt:
         return None
     finally:
         _desactiver_souris()
-        _effacer_bloc(debut, len(options))
-        _ecrire(f"{_ECHAP}[{debut};1H")
-        _ecrire(f"{_ECHAP}[1mChoix : {options[selection][0]}. {options[selection][1]}{_ECHAP}[0m\n")
+        _effacer_bloc_relatif(len(options))
+        if choix_final is not None:
+            code, libelle = choix_final
+            _ecrire(f"{_ECHAP}[1mChoix : {code}. {libelle}{_ECHAP}[0m\n")
