@@ -86,10 +86,15 @@ def _lister_connexions_macos() -> list[tuple[int, int]]:
     if resultat.returncode != 0:
         raise PermissionSystemeError(MESSAGE_PERMISSION)
 
+    return _lister_connexions_macos_from(resultat.stdout)
+
+
+def _lister_connexions_macos_from(sortie: str) -> list[tuple[int, int]]:
+    """Parse la sortie `lsof -nP -iTCP -sTCP:LISTEN` en couples (port, pid)."""
     resultats: set[tuple[int, int]] = set()
-    for ligne in resultat.stdout.splitlines():
+    for ligne in sortie.splitlines():
         champs = ligne.split()
-        if len(champs) < 6 or not champs[0].isupper():
+        if len(champs) < 6 or champs[0] == "COMMAND":
             continue
         pid = int(champs[1]) if champs[1].isdigit() else -1
         adresse = next((champ for champ in reversed(champs) if ":" in champ), None)
@@ -118,10 +123,10 @@ def port_en_ecoute(port: int) -> bool:
 
 
 def construire_processus(pid: int) -> Processus | None:
-    """Construit une description d'un processus, ou None s'il n'existe plus."""
+    """Construit une description d'un processus, ou None s'il est inaccessible."""
     try:
         proc = psutil.Process(pid)
-    except (psutil.NoSuchProcess, ValueError):
+    except (psutil.NoSuchProcess, psutil.AccessDenied, ValueError):
         return None
 
     nom = _essayer(proc.name, "inconnu")
@@ -148,7 +153,7 @@ def cwd_processus(pid: int) -> str | None:
     """Répertoire de travail courant d'un processus, ou None sinon."""
     try:
         proc = psutil.Process(pid)
-    except (psutil.NoSuchProcess, ValueError):
+    except (psutil.NoSuchProcess, psutil.AccessDenied, ValueError):
         return None
 
     return _essayer(proc.cwd, None)

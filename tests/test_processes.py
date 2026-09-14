@@ -29,6 +29,17 @@ def test_port_lsof_formats() -> None:
     assert process_manager._port_lsof(None) is None
 
 
+def test_lister_connexions_macos_parse_lsof() -> None:
+    sortie = (
+        "COMMAND  PID USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME\n"
+        "python3  777 tino   3u  IPv4 0xe  0t0    TCP 127.0.0.1:3000 (LISTEN)\n"
+        "node     -  root   3u  IPv4 0xf  0t0    TCP *:8080 (LISTEN)\n"
+    )
+    connexions = process_manager._lister_connexions_macos_from(sortie)
+    assert (3000, 777) in connexions
+    assert (8080, -1) in connexions
+
+
 def _port_libre() -> int:
     """Renvoie un port libre en réservant puis relâchant un socket."""
     ecoute = socket.socket()
