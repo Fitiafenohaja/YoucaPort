@@ -21,11 +21,10 @@ Testé et livré en continu sur **Linux**, **Windows** et **macOS** (Python 3.11
 5. [Fonctionnalités](#fonctionnalités)
 6. [Windows et macOS](#windows-et-macos)
 7. [Démarrage d'un processus](#démarrage-dun-processus)
-8. [Architecture](#architecture)
-9. [Développement](#développement)
-10. [Intégration continue et publication](#intégration-continue-et-publication)
-11. [Limites de cette version](#limites-de-cette-version)
-12. [Licence](#licence)
+8. [Développement](#développement)
+9. [Intégration continue et publication](#intégration-continue-et-publication)
+10. [Limites de cette version](#limites-de-cette-version)
+11. [Licence](#licence)
 
 ---
 
@@ -272,60 +271,6 @@ YoucaPort ne tue jamais brutalement par défaut :
 Aucune stack trace n'est jamais affichée : chaque erreur (port invalide, permission
 insuffisante, processus déjà arrêté...) est traduite en message clair en français, avec un
 code de sortie approprié (`0` ou `1`).
-
----
-
-## Architecture
-
-```text
-youcaport/
-│
-├── pyproject.toml        # source de vérité : version, dépendances, entry point
-├── poetry.lock
-├── README.md
-├── LICENSE
-├── scripts/
-│   ├── build_binary.sh   # exécutable autonome (PyInstaller)
-│   └── dev.sh            # wrapper make (install/test/lint/build/binary)
-│
-├── src/youcaport/
-│   ├── __init__.py        # version via importlib.metadata (repli tomllib en dev)
-│   ├── cli.py             # commandes Typer (status/check/free/suggest/profile/project/dashboard/docker)
-│   ├── menu.py            # menu interactif + sous-menu — pas de logique métier
-│   ├── dashboard.py       # interface web locale — stdlib uniquement
-│   │
-│   ├── core/                # aucune dépendance d'affichage, 100% testable
-│   │   ├── port_manager.py    # orchestration, dataclass InfoPort
-│   │   ├── process_manager.py # seul module appelant psutil (Linux/macOS/Windows + replis)
-│   │   ├── privileges.py      # accès privilégié (sudo) aux processus protégés
-│   │   ├── docker_manager.py  # conteneurs Docker publiant des ports
-│   │   ├── validator.py       # validateurs + exceptions (PortInvalideError, ...)
-│   │   ├── profiles.py        # profils de projets — JSON via XDG
-│   │   ├── suggester.py       # ports libres à proximité
-│   │   └── project_manager.py # ports utilisés par un projet
-│   │
-│   └── utils/
-│       └── terminal.py     # seul module Rich (tableaux, confirmations, gestion des erreurs)
-│
-└── tests/                  # sockets et sous-processus réels
-    ├── conftest.py        # sonde d'environnement (skip macOS restreint)
-    ├── test_ports.py
-    ├── test_processes.py
-    ├── test_validator.py
-    ├── test_profiles.py
-    ├── test_suggester.py
-    ├── test_project.py
-    ├── test_privileges.py # parsing `ss` via sudo
-    └── test_docker.py     # parsing `docker ps`
-```
-
-**Principes respectés :**
-
-- `core/` ne dépend d'aucune bibliothèque d'affichage (testable en isolation).
-- `cli.py` / `menu.py` orchestrent uniquement ; l'affichage passe par `utils/terminal.py`.
-- Exceptions personnalisées plutôt que codes de retour épars.
-- Tests réalistes (sockets et sous-processus réels), mocks réservés aux cas impossibles à
-  reproduire localement (ex. permission refusée).
 
 ---
 
