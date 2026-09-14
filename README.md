@@ -1,20 +1,55 @@
 # YoucaPort
 
-**Gestionnaire de ports en ligne de commande** — trouve, vérifie et libère les ports réseau
-utilisés localement, sans avoir besoin de connaître `lsof`, `ss`, `netstat` ou `kill`.
+[![PyPI version](https://img.shields.io/pypi/v/youcaport)](https://pypi.org/project/youcaport/)
+[![Python versions](https://img.shields.io/pypi/pyversions/youcaport)](https://pypi.org/project/youcaport/)
+[![CI](https://github.com/Fitiafenohaja/YoucaPort/actions/workflows/ci.yml/badge.svg)](https://github.com/Fitiafenohaja/YoucaPort/actions/workflows/ci.yml)
+[![Licence](https://img.shields.io/github/license/Fitiafenohaja/YoucaPort)](./LICENSE)
+
+> Gestionnaire de ports en ligne de commande — trouve, vérifie et libère les ports réseau
+> utilisés localement, sans avoir besoin de connaître `lsof`, `ss`, `netstat` ou `kill`.
+
+Testé et livré en continu sur **Linux**, **Windows** et **macOS** (Python 3.11+).
+
+---
+
+## Sommaire
+
+1. [Démarrage rapide](#démarrage-rapide)
+2. [Pourquoi YoucaPort ?](#pourquoi-youcaport-)
+3. [Installation](#installation)
+4. [Utilisation](#utilisation)
+5. [Fonctionnalités](#fonctionnalités)
+6. [Windows et macOS](#windows-et-macos)
+7. [Démarrage d'un processus](#démarrage-dun-processus)
+8. [Architecture](#architecture)
+9. [Développement](#développement)
+10. [Intégration continue et publication](#intégration-continue-et-publication)
+11. [Limites de cette version](#limites-de-cette-version)
+12. [Licence](#licence)
+
+---
+
+## Démarrage rapide
+
+```bash
+pipx install youcaport          # installé dans son propre environnement (recommandé)
+
+youcaport status                # ports en écoute avec processus & conteneurs identifiés
+youcaport check 3000            # un port libre ou occupé ?
+youcaport free 3000             # libérer un port (confirmation obligatoire)
+youcaport dashboard             # interface web locale : http://127.0.0.1:8421
+```
 
 ```text
-╭──────────────────────────────╮
-│          PORTKEEPER          │
-│      Port Manager CLI        │
-╰──────────────────────────────╯
+$ youcaport status
 
-1. Ports utilisés
-2. Vérifier un port
-3. Libérer un port
-4. Quitter
+17 port(s) en écoute — 5 processus identifiés, 12 non identifiés
 
-Choix :
+PORT    APPLICATION    PID      ÉTAT
+──────  ─────────────   ──────   ──────────────
+3000    Next.js         447315   En écoute
+5173    Vite            321456   En écoute
+5432    postgres:16     189230   En écoute (Docker)
 ```
 
 ---
@@ -28,32 +63,31 @@ soit déjà occupé :
 EADDRINUSE: address already in use
 ```
 
-Plutôt que de jongler avec `lsof -i :3000`, `kill -9 <PID>` et autres commandes système,
-YoucaPort centralise tout dans une interface simple :
-
-```text
-PORT    APPLICATION    PID      STATUS
-────────────────────────────────────────
-3000    Next.js        447315   RUNNING
-5173    Vite           321456   RUNNING
-8000    Uvicorn        221890   RUNNING
-5432    PostgreSQL     189230   RUNNING
-```
+Plutôt que de jongler avec `lsof -i :3000`, `kill -9 <PID>` ou le jeu de `ss`/`netstat`,
+YoucaPort centralise tout dans une interface simple et claire en français. Il va plus loin en
+identifiant les processus **protégés** (services système, moteur Docker) grâce à un mode sudo,
+et en vous proposant les **ports libres** proches en cas de conflit.
 
 ---
 
 ## Installation
 
-### Avec pipx (recommandé)
+### pipx (recommandé pour une CLI)
+
+Sur Debian/Ubuntu, `pip install` global refuse d'installer dans un système géré
+(externally-managed, PEP 668) : `pipx` crée un environnement isolé dédié à la CLI.
 
 ```bash
+sudo apt install pipx           # ou : brew install pipx
 pipx install youcaport
 ```
 
-### Avec pip
+### pip (environnement virtuel)
 
 ```bash
-pip install youcaport
+python3 -m venv ~/youcaport-venv
+~/youcaport-venv/bin/pip install youcaport
+~/youcaport-venv/bin/youcaport --version
 ```
 
 ### Depuis les sources
@@ -66,8 +100,16 @@ poetry build
 pipx install dist/youcaport-*.whl
 ```
 
-**Prérequis** : Python 3.11+. Plateforme prioritaire : **Linux** (Windows/macOS non testés
-pour cette version, mais l'architecture est déjà abstraite pour une extension future).
+### Exécutable autonome
+
+Un binaire sans Python requis est joint à chaque [release GitHub](https://github.com/Fitiafenohaja/YoucaPort/releases) :
+
+```bash
+./dist/youcaport --help
+```
+
+**Prérequis** : Python 3.11+. Plateformes supportées : **Linux**, **Windows**, **macOS**
+(couvertes par les jobs CI).
 
 ---
 
@@ -79,122 +121,104 @@ pour cette version, mais l'architecture est déjà abstraite pour une extension 
 youcaport
 ```
 
-Lance le menu principal : ports utilisés / vérifier un port / libérer un port / quitter.
+Lance le menu principal (version affichée, astuce d'utilisation) : ports utilisés, vérifier
+un port, libérer un port, accès aux fonctionnalités avancées via un sous-menu.
 
 ### Commandes directes
 
 ```bash
-# Lister tous les ports utilisés
-youcaport status
-```
-
-```bash
-# Vérifier un port précis
-youcaport check 3000
+youcaport status                      # tous les ports en écoute
+youcaport check 3000                  # un port précis
+youcaport free 3000                   # libérer après confirmation obligatoire
+youcaport --help                      # aide complète (riche, avec astuces --sudo)
+youcaport --version
 ```
 
 ```text
+$ youcaport check 3000
+
 ✗ Port 3000 occupé
 
 Application : Next.js
 PID          : 447315
 État         : En cours d'exécution
-```
 
-```bash
-# Libérer un port (avec confirmation obligatoire)
-youcaport free 3000
-```
-
-```text
-Port 3000
-
-Application : Next.js
-PID         : 447315
-
-Voulez-vous arrêter cette application ?
-[y/N]
-```
-
-```bash
-# Aide et version
-youcaport --help
-youcaport --version
+Ports libres suggérés : 3001, 3002, 3003
 ```
 
 ---
 
-## Fonctionnalités avancées (V2 → V6)
+## Fonctionnalités
 
-### Suggérer des ports libres — Auto Port (V4)
+### Ports libres à proximité — Auto Port
 
-Quand un port est occupé, `check` propose automatiquement des ports libres proches.
-Une commande dédiée existe aussi :
+Quand un port est occupé, `check` propose automatiquement des ports libres proches. Une
+commande dédiée existe aussi :
 
 ```bash
-youcaport suggest 3000 --count 5
+youcaport suggest 3000 --count 5      # 5 ports libres autour de 3000
 ```
 
-```text
-Ports libres suggérés : 3001, 3002, 3003, 3004, 3005
-```
-
-### Profils de projets — Port Profiles (V2)
+### Profils de projets — Port Profiles
 
 Associez des ports à des projets nommés (stockage : `~/.config/youcaport/profiles.json`) :
 
 ```bash
-youcaport profile add frontend 3000     # associe le port 3000 au projet "frontend"
-youcaport profile list                   # liste les profils
-youcaport profile show frontend          # état des ports d'un profil
-youcaport profile remove frontend        # supprime le profil
+youcaport profile add frontend 3000    # associe le port 3000 au projet "frontend"
+youcaport profile list                 # liste les profils
+youcaport profile show frontend        # état des ports d'un profil
+youcaport profile remove frontend      # supprime le profil
 ```
 
-### Ports d'un projet — Project Management (V3)
+### Ports d'un projet — Project Management
 
-Détecte automatiquement les ports utilisés par les processus tournant depuis un dossier :
+Détecte automatiquement les ports utilisés par les processus lancés depuis un dossier :
 
 ```bash
 youcaport project /chemin/vers/mon/projet
-# ou, depuis le dossier du projet :
-youcaport project .
+youcaport project .                    # depuis le dossier du projet
 ```
 
-### Dashboard web local (V5)
+### Dashboard web local
 
-Interface web locale (stdlib, aucune dépendance supplémentaire), auto-rechargée :
+Interface web locale (bibliothèque standard, aucune dépendance supplémentaire), mise à jour
+manuelle ou automatique :
 
 ```bash
-youcaport dashboard            # http://127.0.0.1:8421
-youcaport dashboard --port 9000
+youcaport dashboard                    # ouvre http://127.0.0.1:8421
+youcaport dashboard --port 9000        # port différent
+youcaport dashboard --no-browser       # ne pas ouvrir le navigateur
 ```
 
-Une API JSON est exposée sur `/api/ports`, pratique pour l'intégration.
+- Statistiques (total, identifiés, non identifiés)
+- Recherche et tri par colonne
+- Badges d'état et compte à rebours de rafraîchissement
+- API JSON sur `/api/ports` pour l'intégration
 
 ### Ports protégés (root / docker) — mode sudo
 
 Certains écouteurs (services système, moteur Docker, autre utilisateur) ne sont pas
-identifiables par un utilisateur normal : YoucaPort les affiche alors comme occupés
-mais **non identifiés**, sans pouvoir les arrêter. Le mode `--sudo` lève ce voile en
-interrogeant `ss` avec les privilèges root (le mot de passe sudo sert de confirmation) :
+identifiables par un utilisateur normal : YoucaPort les affiche comme occupés mais
+**non identifiés**, sans pouvoir les arrêter. Le mode `--sudo` lève ce voile en interrogeant
+`ss` avec les privilèges root :
 
 ```bash
 youcaport status --sudo            # identifie les ports protégés
 youcaport check 8080 --sudo        # détail d'un port protégé
-youcaport free 9100 --sudo         # arrête vraiment le processus protégé (TERM puis KILL)
+youcaport free 9100 --sudo         # arrête réellement le processus protégé (TERM puis KILL)
 youcaport dashboard --sudo         # enrichit l'API/la page (uniquement si sudo déjà authentifié)
 ```
 
 Comportements importants :
 
-- CLI : si sudo n'est pas encore authentifié, le mot de passe est **demandé** au lancement ;
-  si ce n'est pas possible (pas de terminal), un message invite à lancer une fois `sudo -v`.
-- Dashboard : jamais de demande de mot de passe — il n'utilise que les identifiants déjà
-  en cache (`sudo -n`), sinon les ports restent « non identifiés ».
-- L'arrêt reste **toujours confirmé** et passe par TERM puis KILL en dernier recours.
-- Sous Windows, le mode `--sudo` est sans effet (pas de `sudo`/`ss`).
+- **CLI** : si sudo n'est pas encore authentifié, le mot de passe est **demandé** au
+  lancement ; sans terminal, un message invite à lancer une fois `sudo -v`.
+- **Dashboard** : jamais de demande de mot de passe — seuls les identifiants en cache sont
+  utilisés (`sudo -n`), sinon les ports restent « non identifiés ».
+- L'arrêt reste **toujours confirmé** et passe par **TERM puis KILL** en dernier recours.
+- Disponible **sous Linux uniquement** (`ss`) — sans effet sous Windows et macOS.
 
-### Gestion des conteneurs Docker (V6)
+### Gestion des conteneurs Docker
 
 Quand un port est occupé par le moteur Docker, identifiez puis arrêtez le bon conteneur
 (`docker-proxy` n'est qu'un relais — arrêter le conteneur est la bonne manière) :
@@ -213,46 +237,41 @@ Image  : postgres:16
 Statut : Up 2 hours
 ```
 
-Fonctionne partout où le CLI `docker` est disponible. Après l'arrêt, le port revient
-libre : `youcaport status` le confirme.
-
-### Exécutable autonome (PyInstaller)
-
-```bash
-make binary       # ou : ./scripts/dev.sh binary
-./dist/youcaport --version
-```
+Fonctionne partout où le CLI `docker` est disponible. Après l'arrêt, le port revient libre :
+`youcaport status` le confirme.
 
 ---
 
-## Windows
+## Windows et macOS
 
-YoucaPort fonctionne aussi sur Windows (psutil est multiplateforme, couvert par un job CI
-`windows-latest`). Particularités :
+YoucaPort est **multiplateforme** (psutil est croisé, couvert par des jobs CI dédiés).
 
-- **Installation** : `pip install youcaport` (ou `pipx install youcaport`) ; l'exécutable
-  PyInstaller se construit sur une machine Windows (`make binary` n'est pas requis,
-  utiliser `scripts/build_binary.sh` dans un terminal Windows).
-- **Arrêt d'un processus** : Windows n'offre pas de signal d'arrêt gracieux (SIGTERM) ;
-  `terminate()` réalise un arrêt immédiat. YoucaPort vous en avertit explicitement avant
-  la confirmation.
-- **Profil de projets** : le fichier `profiles.json` est stocké dans `%LOCALAPPDATA%\youcaport\`
-  (au lieu de `~/.config/youcaport/` sur Linux/macOS).
+- **Installation** : `pipx install youcaport` (ou via venv).
+- **Arrêt d'un processus** : sous Windows, SIGTERM n'existe pas — `terminate()` réalise un
+  arrêt immédiat. YoucaPort vous en avertit explicitement avant la confirmation.
+- **Profil de projets** :
+  - Linux / macOS : `~/.config/youcaport/profiles.json`
+  - Windows : `%LOCALAPPDATA%\youcaport\`
+- **macOS** : lorsque l'énumération réseau psutil est restreinte (ex. certains contextes
+  d'exécution), YoucaPort bascule automatiquement sur `lsof` puis `netstat` — les ports
+  restent listés, les processus sans privilège apparaissent en « non identifiés ».
+- **Mode sudo et Docker** : Docker fonctionne sur les trois plateformes ; le mode `--sudo`
+  est propre à Linux.
 
 ---
 
-## Fonctionnement de l'arrêt d'un processus
+## Démarrage d'un processus
 
-YoucaPort ne tue jamais un processus brutalement par défaut :
+YoucaPort ne tue jamais brutalement par défaut :
 
-1. Confirmation obligatoire (`y/N`) avec rappel de l'application, du PID et du port.
-2. Envoi d'un **SIGTERM** (arrêt propre).
+1. **Confirmation obligatoire** (`y/N`) avec rappel de l'application, du PID et du port.
+2. Envoi d'un **SIGTERM** (arrêt propre) — `terminate()` sous Windows.
 3. Période de grâce de **3 secondes**.
 4. **SIGKILL** uniquement si le processus n'a pas répondu au SIGTERM.
 
-Aucune stack trace n'est jamais affichée à l'utilisateur : chaque erreur (port invalide,
-permission insuffisante, processus déjà arrêté...) est traduite en message clair en français,
-avec un code de sortie approprié (`0` ou `1`).
+Aucune stack trace n'est jamais affichée : chaque erreur (port invalide, permission
+insuffisante, processus déjà arrêté...) est traduite en message clair en français, avec un
+code de sortie approprié (`0` ou `1`).
 
 ---
 
@@ -261,99 +280,100 @@ avec un code de sortie approprié (`0` ou `1`).
 ```text
 youcaport/
 │
-├── pyproject.toml        # source de vérité pour la version et les dépendances
+├── pyproject.toml        # source de vérité : version, dépendances, entry point
 ├── poetry.lock
 ├── README.md
 ├── LICENSE
+├── scripts/
+│   ├── build_binary.sh   # exécutable autonome (PyInstaller)
+│   └── dev.sh            # wrapper make (install/test/lint/build/binary)
 │
 ├── src/youcaport/
 │   ├── __init__.py        # version via importlib.metadata (repli tomllib en dev)
-│   ├── cli.py              # commandes Typer (status/check/free/suggest/project/dashboard/profile)
-│   ├── menu.py             # menu interactif + sous-menu — pas de logique métier
-│   ├── dashboard.py        # interface web locale (V5) — stdlib uniquement
+│   ├── cli.py             # commandes Typer (status/check/free/suggest/profile/project/dashboard/docker)
+│   ├── menu.py            # menu interactif + sous-menu — pas de logique métier
+│   ├── dashboard.py       # interface web locale — stdlib uniquement
 │   │
 │   ├── core/                # aucune dépendance d'affichage, 100% testable
 │   │   ├── port_manager.py    # orchestration, dataclass InfoPort
-│   │   ├── process_manager.py # seul module appelant psutil (abstraction Linux/macOS/Windows)
+│   │   ├── process_manager.py # seul module appelant psutil (Linux/macOS/Windows + replis)
 │   │   ├── privileges.py      # accès privilégié (sudo) aux processus protégés
-│   │   ├── docker_manager.py  # conteneurs Docker publiant des ports (V6)
+│   │   ├── docker_manager.py  # conteneurs Docker publiant des ports
 │   │   ├── validator.py       # validateurs + exceptions (PortInvalideError, ...)
-│   │   ├── profiles.py        # profils de projets (V2) — JSON via XDG
-│   │   ├── suggester.py       # ports libres à proximité (V4)
-│   │   └── project_manager.py # ports utilisés par un projet (V3)
+│   │   ├── profiles.py        # profils de projets — JSON via XDG
+│   │   ├── suggester.py       # ports libres à proximité
+│   │   └── project_manager.py # ports utilisés par un projet
 │   │
 │   └── utils/
 │       └── terminal.py     # seul module Rich (tableaux, confirmations, gestion des erreurs)
 │
-└── tests/
-    ├── test_ports.py        # sockets réellement en écoute
-    ├── test_processes.py    # sous-processus enfants réellement lancés/tués
+└── tests/                  # sockets et sous-processus réels
+    ├── conftest.py        # sonde d'environnement (skip macOS restreint)
+    ├── test_ports.py
+    ├── test_processes.py
     ├── test_validator.py
-    ├── test_profiles.py     # profils de projets
-    ├── test_suggester.py    # auto-port
-    ├── test_project.py      # détection par projet
-    ├── test_privileges.py   # parsing `ss` via sudo + enrichissement
-    └── test_docker.py       # parsing `docker ps` (V6)
+    ├── test_profiles.py
+    ├── test_suggester.py
+    ├── test_project.py
+    ├── test_privileges.py # parsing `ss` via sudo
+    └── test_docker.py     # parsing `docker ps`
 ```
 
 **Principes respectés :**
+
 - `core/` ne dépend d'aucune bibliothèque d'affichage (testable en isolation).
-- `cli.py` / `menu.py` orchestrent uniquement ; tout l'affichage passe par `utils/terminal.py`.
+- `cli.py` / `menu.py` orchestrent uniquement ; l'affichage passe par `utils/terminal.py`.
 - Exceptions personnalisées plutôt que codes de retour épars.
 - Tests réalistes (sockets et sous-processus réels), mocks réservés aux cas impossibles à
-  reproduire en local (ex. permission refusée).
+  reproduire localement (ex. permission refusée).
 
 ---
 
 ## Développement
 
 ```bash
-# Installer les dépendances (dev incluses)
-make install
-# ou : poetry install
-
-# Lancer les tests
-make test
-# ou : poetry run pytest
-
-# Lint + format
-make lint
-make format
-# ou : poetry run ruff check . / poetry run ruff format .
-
-# Build (wheel + sdist)
-make build
-# ou : poetry build
-
-# Exécutable autonome (PyInstaller)
-make binary
-# ou : ./scripts/dev.sh binary
+make install        # ou : poetry install
+make test           # ou : poetry run pytest
+make lint           # ou : poetry run ruff check .
+make format         # ou : poetry run ruff format .
+make build          # ou : poetry build
+make binary         # ou : ./scripts/dev.sh binary
 ```
 
 Toutes ces commandes sont aussi disponibles via `scripts/dev.sh`.
 
-### CI/CD
+**Conventions** : Ruff (100 colonnes) ; lint + format vérifiés en CI ; régression garantie
+par `pytest` sur les trois plateformes.
+
+---
+
+## Intégration continue et publication
 
 `.github/workflows/ci.yml` exécute à chaque push/PR :
-- lint (`ruff check`, `ruff format --check`)
-- tests (`pytest`) sur Python 3.11 + 3.12 (Linux), et sur Windows et macOS (Python 3.12)
 
-À chaque tag `v*`, le workflow publie automatiquement sur PyPI via **trusted publishing**
-(OIDC — aucun token PyPI à stocker en secret).
+- **quality** : lint (`ruff check`, `ruff format --check`) + tests (`pytest`) — Python 3.11
+  et 3.12 (Linux)
+- **tests-windows** : tests sur `windows-latest`, Python 3.12
+- **tests-macos** : tests sur `macos-latest`, Python 3.12
+- **publish** : déclenché uniquement sur les tags `v*` — publication sur **PyPI** via
+  **trusted publishing** (OIDC, aucun token PyPI stocké en secret).
 
 ```bash
 git tag v0.1.0
-git push origin v0.1.0
+git push origin v0.1.0      # déclenche quality + windows + macOS + publication PyPI
 ```
+
+À compléter manuellement : la **release GitHub** avec le binaire autonome
+(`gh release create <tag> dist/youcaport`).
 
 ---
 
 ## Limites de cette version
 
-Comme prévu par le cahier des charges, YoucaPort reste volontairement simple :
+Conformément au cahier des charges, YoucaPort reste volontairement simple :
 
-- **Dashboard lourd / comptes / base de données** : hors périmètre MVP ; le dashboard V5
-  est volontairement léger (page locale, stdlib).
+- **Dashboard lourd / comptes / base de données** : hors périmètre ; le dashboard est
+  volontairement léger (page locale, stdlib).
 
 ---
 
