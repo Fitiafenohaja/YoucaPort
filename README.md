@@ -248,6 +248,18 @@ Ports libres suggérés : 3001, 3002, 3003
 
 ## Fonctionnalités
 
+| Fonction | Commande |
+| --- | --- |
+| Menu interactif (navigation clavier/souris) | `youcaport` |
+| Ports en écoute + résumé | `youcaport status [--sudo]` |
+| Vérifier un port | `youcaport check <port> [--sudo]` |
+| Libérer un port (TERM → KILL) | `youcaport free <port> [--sudo]` |
+| Ports libres proches (Auto Port) | `youcaport suggest <port> [--count N]` |
+| Ports d'un projet | `youcaport project <chemin>` |
+| Dashboard web local | `youcaport dashboard [--port N] [--no-browser] [--sudo]` |
+| Conteneurs Docker | `youcaport docker list \| show \| stop` |
+| Profils de projets | `youcaport profile add \| list \| show \| remove` |
+
 ### Ports libres à proximité — Auto Port
 
 Quand un port est occupé, `check` propose automatiquement des ports libres proches. Une
