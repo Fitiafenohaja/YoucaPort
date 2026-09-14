@@ -83,7 +83,7 @@ def _lister_connexions_macos() -> list[tuple[int, int]]:
     except (OSError, subprocess.SubprocessError) as exc:
         raise PermissionSystemeError(MESSAGE_PERMISSION) from exc
 
-    if resultat.returncode != 0:
+    if resultat.returncode != 0 and not resultat.stdout:
         raise PermissionSystemeError(MESSAGE_PERMISSION)
 
     return _lister_connexions_macos_from(resultat.stdout)
