@@ -20,6 +20,14 @@ from youcaport.core.process_manager import (
 _PID_INEXISTANT = 9_999_999_99
 
 
+def test_port_macos_formats() -> None:
+    assert process_manager._port_macos("*.8080") == 8080
+    assert process_manager._port_macos("127.0.0.1.631") == 631
+    assert process_manager._port_macos("*.*") is None
+    assert process_manager._port_macos("mailto") is None
+    assert process_manager._port_macos("*.99999") is None
+
+
 def _port_libre() -> int:
     """Renvoie un port libre en réservant puis relâchant un socket."""
     ecoute = socket.socket()

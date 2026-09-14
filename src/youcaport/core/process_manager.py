@@ -5,6 +5,7 @@ Tout appel a psutil passe obligatoirement par ce module.
 
 from __future__ import annotations
 
+import subprocess
 import sys
 from dataclasses import dataclass
 
@@ -48,11 +49,14 @@ class Processus:
 def lister_connexions_ecoute() -> list[tuple[int, int]]:
     """Renvoie la liste des couples (port, pid) actuellement en écoute.
 
-    Lève PermissionSystemeError si les connexions réseau sont inaccessibles.
+    Lève PermissionSystemeError si les connexions réseau sont inaccessibles,
+    sauf sur macOS où un repli sur `netstat` évite de bloquer l'outil.
     """
     try:
         connexions = psutil.net_connections(kind="tcp")
     except psutil.AccessDenied as exc:
+        if sys.platform == "darwin":
+            return _lister_connexions_macos()
         raise PermissionSystemeError(MESSAGE_PERMISSION) from exc
 
     resultats: set[tuple[int, int]] = set()
@@ -65,6 +69,47 @@ def lister_connexions_ecoute() -> list[tuple[int, int]]:
             resultats.add((port, pid))
 
     return sorted(resultats, key=lambda element: element[0])
+
+
+def _lister_connexions_macos() -> list[tuple[int, int]]:
+    """Repli macOS sans privilèges : `netstat -an`, processus inconnus (pid -1)."""
+    try:
+        resultat = subprocess.run(
+            ["netstat", "-an"],
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise PermissionSystemeError(MESSAGE_PERMISSION) from exc
+
+    if resultat.returncode != 0:
+        raise PermissionSystemeError(MESSAGE_PERMISSION)
+
+    resultats: set[tuple[int, int]] = set()
+    for ligne in resultat.stdout.splitlines():
+        champs = ligne.split()
+        if len(champs) < 6 or not champs[0].startswith("tcp"):
+            continue
+        if champs[-1] != "LISTEN":
+            continue
+        port = _port_macos(champs[3])
+        if port is None:
+            continue
+        resultats.add((port, -1))
+
+    return sorted(resultats, key=lambda element: element[0])
+
+
+def _port_macos(local: str) -> int | None:
+    """Extrait le port des adresses macOS type `*.8080` ou `127.0.0.1.631`."""
+    if "." not in local:
+        return None
+    suffixe = local.rsplit(".", 1)[1]
+    if not suffixe.isdigit():
+        return None
+    port = int(suffixe)
+    return port if 1 <= port <= 65535 else None
 
 
 def port_en_ecoute(port: int) -> bool:
