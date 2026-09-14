@@ -1,6 +1,6 @@
 [project]
 name = "youcaport"
-version = "0.1.1"
+version = "0.1.2"
 description = "CLI pour lister, vérifier et libérer les ports réseau utilisés localement."
 readme = "README.md"
 license = "MIT"
