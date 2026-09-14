@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import sys
+
 from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Confirm, Prompt
@@ -11,6 +13,7 @@ from youcaport.core.docker_manager import Conteneur
 from youcaport.core.port_manager import InfoPort
 from youcaport.core.process_manager import ProcessusIntrouvableError
 from youcaport.core.validator import YoucaPortError
+from youcaport.utils import selection
 
 _console = Console()
 
@@ -154,16 +157,11 @@ def afficher_resume_ports(infos: list[InfoPort]) -> None:
 
 
 def afficher_menu(version: str = "") -> None:
-    """Affiche le menu principal en surbrillance."""
+    """Affiche l'encadré du menu principal et son astuce."""
     sous_titre = "Gestionnaire de ports"
     if version:
         sous_titre += f" — v{version}"
     _console.print(Panel(f"[bold]YOUCAPORT[/bold]\n{sous_titre}", border_style="cyan"))
-    _console.print()
-    _console.print("1. Ports utilisés")
-    _console.print("2. Vérifier un port")
-    _console.print("3. Libérer un port")
-    _console.print("4. Quitter")
     _console.print()
     _console.print(
         "[dim]Astuce : sous Linux, `free 3000 --sudo` libère aussi les ports "
@@ -172,11 +170,26 @@ def afficher_menu(version: str = "") -> None:
     _console.print()
 
 
-def demander_choix(codes: list[str] | None = None) -> str | None:
-    """Demande un choix de menu parmi les codes donnés ; None si interrompu."""
-    choix = codes or ["1", "2", "3", "4"]
+def demander_choix(
+    codes: list[str] | None = None,
+    libelles: list[str] | None = None,
+) -> str | None:
+    """Demande un choix de menu, interchangeable au clavier (flèches/numéro) et à la souris."""
+    codes = codes or ["1", "2", "3", "4"]
+    libelles = libelles or [
+        "Ports utilisés",
+        "Vérifier un port",
+        "Libérer un port",
+        "Quitter",
+    ]
+    options = list(zip(codes, libelles, strict=True))
+
+    if sys.stdin.isatty() and sys.stdout.isatty():
+        return selection.menu_interactif(options)
+    for code, libelle in options:
+        _console.print(f"{code}. {libelle}")
     try:
-        return Prompt.ask("Choix", choices=choix, show_choices=False)
+        return Prompt.ask("Choix", choices=codes, show_choices=False)
     except KeyboardInterrupt:
         return None
 
@@ -184,10 +197,7 @@ def demander_choix(codes: list[str] | None = None) -> str | None:
 def demander_sous_menu() -> str | None:
     """Affiche le sous-menu de gestion des ports et renvoie le choix."""
     _console.print()
-    _console.print("1. Vérifier un port")
-    _console.print("2. Libérer un port")
-    _console.print("3. Retour")
-    return demander_choix(["1", "2", "3"])
+    return demander_choix(["1", "2", "3"], ["Vérifier un port", "Libérer un port", "Retour"])
 
 
 def demander_port() -> str:

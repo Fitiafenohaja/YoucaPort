@@ -123,6 +123,13 @@ youcaport
 Lance le menu principal (version affichée, astuce d'utilisation) : ports utilisés, vérifier
 un port, libérer un port, accès aux fonctionnalités avancées via un sous-menu.
 
+La navigation est **interactive** :
+- **Clavier** : flèches ↑/↓ pour se déplacer, numéro pour choisir directement, Entrée pour
+  valider, `q` ou Échap pour annuler.
+- **Souris** : un clic sur la ligne souhaitée sélectionne immédiatement (terminaux
+  compatibles X10/SGR).
+- En entrée non interactive (script, pipe), un simple prompt numéroté prend le relais.
+
 ### Commandes directes
 
 ```bash

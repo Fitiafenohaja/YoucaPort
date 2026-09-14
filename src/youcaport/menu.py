@@ -12,7 +12,10 @@ def lancer_menu() -> None:
     """Lance la boucle du menu interactif jusqu'à ce que l'utilisateur quitte."""
     while True:
         terminal.afficher_menu(__version__)
-        choix = terminal.demander_choix()
+        choix = terminal.demander_choix(
+            ["1", "2", "3", "4"],
+            ["Ports utilisés", "Vérifier un port", "Libérer un port", "Quitter"],
+        )
 
         if choix is None or choix == "4":
             terminal.afficher_information("À bientôt !")
