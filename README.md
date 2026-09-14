@@ -86,6 +86,18 @@ python3 python3-venv` (Linux Debian/Ubuntu), `brew install python` (macOS).
 > `--break-system-packages` : utilisez simplement `pipx`, `uv` ou un environnement virtuel
 > ci-dessous.
 
+Quelle option pour quel système ?
+
+| Plateforme | Options disponibles |
+| --- | --- |
+| Linux | 1 (pipx), 2 (uv), 3 (venv), 4 (binaire) |
+| macOS  | 1 (pipx), 2 (uv), 3 (venv) |
+| Windows | 1 (pipx), 2 (uv), 3 (venv) |
+
+Contrairement au binaire (option 4, limité à Linux pour l'instant), **pipx, uv et venv
+fonctionnent sur les trois plateformes** — ce sont donc les solutions recommandées hors
+Linux.
+
 ### Option 1 — pipx (recommandé pour une CLI)
 
 `pipx` installe YoucaPort dans son propre environnement isolé et place la commande
