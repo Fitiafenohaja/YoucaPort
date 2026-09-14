@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from youcaport.core import process_manager
+from youcaport.core import privileges, process_manager
 from youcaport.core.process_manager import Processus, ProcessusArretImpossibleError
 from youcaport.core.validator import YoucaPortError, valider_port
 
@@ -74,6 +74,51 @@ def liberer_port(port: int | str) -> InfoPort:
         raise PortNonOccupeError(f"Aucun processus trouvé sur le port {numero}.")
 
     process_manager.arreter_processus(processus.pid)
+
+    apres = verifier_port(numero)
+    if apres.etat != LIBRE:
+        raise ProcessusArretImpossibleError(
+            f"Le processus a été arrêté mais le port {numero} est toujours utilisé."
+        )
+
+    return apres
+
+
+def enrichir_privilegies(infos: list[InfoPort], mapping: dict[int, dict]) -> list[InfoPort]:
+    """Remplace les ports sans processus par les données privilégiées (sudo)."""
+    retour: list[InfoPort] = []
+    for info in infos:
+        donnees = mapping.get(info.port) if info.processus is None else None
+        if donnees is None:
+            retour.append(info)
+            continue
+
+        retour.append(
+            InfoPort(
+                port=info.port,
+                processus=Processus(
+                    pid=donnees["pid"],
+                    nom=donnees["nom"],
+                    executable="",
+                    commande=donnees["nom"],
+                    etat=donnees["etat"],
+                ),
+                etat=info.etat,
+            )
+        )
+    return retour
+
+
+def liberer_port_privilegie(port: int | str, mapping: dict[int, dict]) -> InfoPort:
+    """Libère via sudo un port protégé dont le processus vient du mapping privilégié."""
+    numero = valider_port(port)
+    donnees = mapping.get(numero)
+    if donnees is None:
+        raise PortSansProcessusError(
+            f"Le port {numero} est occupé mais aucun processus n'y est associé."
+        )
+
+    privileges.arreter_privilegie(donnees["pid"])
 
     apres = verifier_port(numero)
     if apres.etat != LIBRE:

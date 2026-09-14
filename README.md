@@ -171,6 +171,29 @@ youcaport dashboard --port 9000
 
 Une API JSON est exposée sur `/api/ports`, pratique pour l'intégration.
 
+### Ports protégés (root / docker) — mode sudo
+
+Certains écouteurs (services système, moteur Docker, autre utilisateur) ne sont pas
+identifiables par un utilisateur normal : YoucaPort les affiche alors comme occupés
+mais **non identifiés**, sans pouvoir les arrêter. Le mode `--sudo` lève ce voile en
+interrogeant `ss` avec les privilèges root (le mot de passe sudo sert de confirmation) :
+
+```bash
+youcaport status --sudo            # identifie les ports protégés
+youcaport check 8080 --sudo        # détail d'un port protégé
+youcaport free 9100 --sudo         # arrête vraiment le processus protégé (TERM puis KILL)
+youcaport dashboard --sudo         # enrichit l'API/la page (uniquement si sudo déjà authentifié)
+```
+
+Comportements importants :
+
+- CLI : si sudo n'est pas encore authentifié, le mot de passe est **demandé** au lancement ;
+  si ce n'est pas possible (pas de terminal), un message invite à lancer une fois `sudo -v`.
+- Dashboard : jamais de demande de mot de passe — il n'utilise que les identifiants déjà
+  en cache (`sudo -n`), sinon les ports restent « non identifiés ».
+- L'arrêt reste **toujours confirmé** et passe par TERM puis KILL en dernier recours.
+- Sous Windows, le mode `--sudo` est sans effet (pas de `sudo`/`ss`).
+
 ### Exécutable autonome (PyInstaller)
 
 ```bash

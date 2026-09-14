@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from youcaport.core import port_manager, process_manager, suggester
-from youcaport.core.port_manager import LIBRE
+from youcaport.core import port_manager, privileges, process_manager, suggester
+from youcaport.core.port_manager import LIBRE, InfoPort
 from youcaport.utils import terminal
 
 
@@ -30,6 +30,10 @@ def _afficher_ports() -> None:
     """Affiche la liste des ports puis propose un sous-menu de gestion."""
     try:
         infos = port_manager.lister_ports_utilises()
+        if any(info.processus is None for info in infos) and terminal.demander_confirmation(
+            "Des ports protégés (root/docker) sont présents. Les identifier avec sudo ?"
+        ):
+            infos = _enrichir_sudo(infos)
     except Exception as exc:
         terminal.afficher_exception(exc)
         return
@@ -52,6 +56,16 @@ def _sous_menu_ports() -> None:
             _verifier_un_port()
         else:
             _liberer_un_port()
+
+
+def _enrichir_sudo(infos: list[InfoPort]) -> list[InfoPort]:
+    """Tente d'enrichir les ports non identifiés avec les données privilégiées."""
+    try:
+        mapping = privileges.connexions_privilegiees(interactif=True)
+    except privileges.SudoNonDisponibleError as exc:
+        terminal.afficher_exception(exc)
+        return infos
+    return port_manager.enrichir_privilegies(infos, mapping)
 
 
 def _verifier_un_port() -> None:
@@ -86,6 +100,9 @@ def _liberer_un_port() -> None:
     if info.processus is None:
         terminal.afficher_erreur(
             f"Le port {info.port} est occupé mais aucun processus n'y est associé."
+        )
+        terminal.afficher_information(
+            f"Astuce : `youcaport free --sudo {info.port}` peut arrêter les processus protégés."
         )
         return
 

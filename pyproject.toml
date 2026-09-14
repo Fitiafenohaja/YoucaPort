@@ -45,6 +45,7 @@ select = ["E", "F", "I", "UP", "B", "C4", "SIM", "N"]
 
 [tool.ruff.lint.per-file-ignores]
 "src/youcaport/cli.py" = ["B008"]
+"src/youcaport/dashboard.py" = ["E501"]
 
 [tool.ruff.format]
 quote-style = "double"

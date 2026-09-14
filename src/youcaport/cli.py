@@ -8,9 +8,16 @@ import typer
 
 from youcaport import __version__
 from youcaport import dashboard as module_dashboard
-from youcaport.core import port_manager, process_manager, profiles, project_manager, suggester
-from youcaport.core.port_manager import LIBRE, PortSansProcessusError
-from youcaport.core.process_manager import ProcessusIntrouvableError
+from youcaport.core import (
+    port_manager,
+    privileges,
+    process_manager,
+    profiles,
+    project_manager,
+    suggester,
+)
+from youcaport.core.port_manager import LIBRE, OCCUPE, InfoPort, PortSansProcessusError
+from youcaport.core.process_manager import Processus, ProcessusIntrouvableError
 from youcaport.core.profiles import ProfilInexistantError
 from youcaport.core.validator import valider_port
 from youcaport.menu import lancer_menu
@@ -54,10 +61,18 @@ def principal(
 
 
 @app.command()
-def status() -> None:
+def status(
+    sudo: bool = typer.Option(
+        False,
+        "--sudo",
+        help="Identifie aussi les ports protégés (root/docker). Mot de passe demandé si besoin.",
+    ),
+) -> None:
     """Affiche les ports actuellement utilisés."""
     try:
         infos = port_manager.lister_ports_utilises()
+        if sudo:
+            infos = _enrichir_sudo(infos)
     except Exception as exc:
         _sortie_erreur(exc)
 
@@ -69,10 +84,20 @@ def status() -> None:
 
 
 @app.command()
-def check(port: str) -> None:
+def check(
+    port: str,
+    sudo: bool = typer.Option(
+        False,
+        "--sudo",
+        help="Identifie le processus même s'il est protégé (root/docker).",
+    ),
+) -> None:
     """Vérifie si un port est libre ou occupé."""
     try:
         info = port_manager.verifier_port(port)
+        if sudo:
+            infos = _enrichir_sudo([info])
+            info = infos[0]
     except Exception as exc:
         _sortie_erreur(exc)
 
@@ -84,7 +109,14 @@ def check(port: str) -> None:
 
 
 @app.command()
-def free(port: str) -> None:
+def free(
+    port: str,
+    sudo: bool = typer.Option(
+        False,
+        "--sudo",
+        help="Autorise l'arrêt des processus protégés (root/docker) via sudo.",
+    ),
+) -> None:
     """Libère un port en arrêtant le processus qui l'occupe."""
     try:
         info = port_manager.verifier_port(port)
@@ -95,14 +127,42 @@ def free(port: str) -> None:
         terminal.afficher_erreur(f"Aucun processus trouvé sur le port {info.port}.")
         raise typer.Exit(code=1)
 
+    mapping: dict[int, dict] = {}
     if info.processus is None:
-        _sortie_erreur(
-            PortSansProcessusError(
-                f"Le port {info.port} est occupé mais aucun processus n'y est associé."
+        if not sudo:
+            _sortie_erreur(
+                PortSansProcessusError(
+                    f"Le port {info.port} est occupé mais aucun processus n'y est associé."
+                )
             )
+        try:
+            mapping = privileges.connexions_privilegiees(interactif=True)
+        except privileges.SudoNonDisponibleError as exc:
+            _sortie_erreur(exc)
+        donnees = mapping.get(info.port)
+        if donnees is None:
+            _sortie_erreur(
+                PortSansProcessusError(
+                    f"Le port {info.port} est occupé mais aucun processus n'y est associé."
+                )
+            )
+        info = InfoPort(
+            port=info.port,
+            processus=Processus(
+                pid=donnees["pid"],
+                nom=donnees["nom"],
+                executable="",
+                commande=donnees["nom"],
+                etat=donnees["etat"],
+            ),
+            etat=OCCUPE,
         )
 
     terminal.afficher_resume_processus(info)
+    if mapping:
+        terminal.afficher_information(
+            "Ce processus est protégé (root/docker) : il sera arrêté via sudo."
+        )
     _prevenir_arret_immediat()
     if not terminal.demander_confirmation():
         terminal.afficher_information("Arrêt annulé, aucun processus arrêté.")
@@ -110,7 +170,10 @@ def free(port: str) -> None:
 
     terminal.afficher_information("Arrêt du processus...")
     try:
-        port_manager.liberer_port(info.port)
+        if mapping:
+            port_manager.liberer_port_privilegie(info.port, mapping)
+        else:
+            port_manager.liberer_port(info.port)
     except Exception as exc:
         _sortie_erreur(exc)
 
@@ -125,6 +188,16 @@ def _prevenir_arret_immediat() -> None:
             "Remarque : sur Windows, l'arrêt du processus est immédiat "
             "(aucune fermeture gracieuse n'est possible)."
         )
+
+
+def _enrichir_sudo(infos: list[InfoPort]) -> list[InfoPort]:
+    """Tente d'enrichir les ports non identifiés avec les données privilégiées."""
+    try:
+        mapping = privileges.connexions_privilegiees(interactif=True)
+    except privileges.SudoNonDisponibleError as exc:
+        terminal.afficher_information(str(exc))
+        return infos
+    return port_manager.enrichir_privilegies(infos, mapping)
 
 
 @app.command()
@@ -175,11 +248,21 @@ def dashboard(
         "--port",
         help="Port sur lequel écoute l'interface web locale.",
     ),
+    no_browser: bool = typer.Option(
+        False,
+        "--no-browser",
+        help="N'ouvre pas automatiquement le navigateur.",
+    ),
+    sudo: bool = typer.Option(
+        False,
+        "--sudo",
+        help="Identifie les ports protégés (uniquement si sudo est déjà authentifié).",
+    ),
 ) -> None:
     """Démarre une interface web locale pour visualiser les ports."""
     try:
         valider_port(port)
-        module_dashboard.lancer_dashboard(port)
+        module_dashboard.lancer_dashboard(port, ouvrir_navigateur=not no_browser, avec_sudo=sudo)
     except Exception as exc:
         _sortie_erreur(exc)
 

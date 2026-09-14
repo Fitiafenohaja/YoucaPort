@@ -21,6 +21,7 @@ _ETATS_FRANCAIS = {
     "zombie": "Zombie",
     "dead": "Mort",
     "disk-sleep": "En attente disque",
+    "LISTEN": "En écoute",
 }
 
 
@@ -35,7 +36,7 @@ def afficher_ports(infos: list[InfoPort]) -> None:
     for info in infos:
         nom = info.processus.nom if info.processus else "inconnu"
         pid = str(info.processus.pid) if info.processus else "-"
-        etat = info.processus.etat.upper() if info.processus else "INCONNU"
+        etat = etat_francais(info.processus.etat) if info.processus else "-"
         tableau.add_row(str(info.port), nom, pid, etat)
 
     _console.print(tableau)
@@ -144,10 +145,10 @@ def demander_port() -> str:
     return Prompt.ask("Entrez le numéro du port")
 
 
-def demander_confirmation() -> bool:
-    """Demande une confirmation oui/non avant un arrêt de processus."""
+def demander_confirmation(question: str = "Voulez-vous arrêter cette application ?") -> bool:
+    """Demande une confirmation oui/non avant une action sensible."""
     _console.print()
-    return Confirm.ask("Voulez-vous arrêter cette application ?", default=False)
+    return Confirm.ask(question, default=False)
 
 
 def attendre_entree() -> None:
@@ -155,7 +156,7 @@ def attendre_entree() -> None:
     Prompt.ask("[dim]Appuyez sur Entrée pour continuer...[/dim]")
 
 
-def _etat_francais(etat: str) -> str:
+def etat_francais(etat: str) -> str:
     """Traduit l'état psutil d'un processus en français lisible."""
     return _ETATS_FRANCAIS.get(etat, etat.capitalize())
 
@@ -171,7 +172,7 @@ def _afficher_details_processus(info: InfoPort) -> None:
     if processus.commande:
         _console.print(f"Processus   : {_tronquer(processus.commande)}")
     _console.print(f"PID          : {processus.pid}")
-    _console.print(f"État         : {_etat_francais(processus.etat)}")
+    _console.print(f"État         : {etat_francais(processus.etat)}")
 
 
 def _tronquer(texte: str, longueur: int = 80) -> str:
