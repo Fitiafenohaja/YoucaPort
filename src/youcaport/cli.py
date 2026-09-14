@@ -9,6 +9,7 @@ import typer
 from youcaport import __version__
 from youcaport import dashboard as module_dashboard
 from youcaport.core import (
+    docker_manager,
     port_manager,
     privileges,
     process_manager,
@@ -37,6 +38,9 @@ app = typer.Typer(
 
 app_profile = typer.Typer(help="Gère les profils de projets (association ports ↔ projets).")
 app.add_typer(app_profile, name="profile")
+
+app_docker = typer.Typer(help="Gère les conteneurs Docker qui publient des ports (V6).")
+app.add_typer(app_docker, name="docker")
 
 
 def _callback_version(valeur: bool) -> None:
@@ -281,6 +285,66 @@ def dashboard(
         module_dashboard.lancer_dashboard(port, ouvrir_navigateur=not no_browser, avec_sudo=sudo)
     except Exception as exc:
         _sortie_erreur(exc)
+
+
+@app_docker.command("list")
+def docker_liste() -> None:
+    """Liste les conteneurs Docker en cours d'exécution et leurs ports hôtes."""
+    try:
+        conteneurs = docker_manager.lister_conteneurs()
+    except Exception as exc:
+        _sortie_erreur(exc)
+
+    if not conteneurs:
+        terminal.afficher_information("Aucun conteneur Docker en cours d'exécution.")
+        return
+
+    terminal.afficher_conteneurs(conteneurs)
+
+
+@app_docker.command("show")
+def docker_affichage(port: str) -> None:
+    """Affiche le conteneur Docker qui publie un port hôte donné."""
+    try:
+        numero = valider_port(port)
+        conteneur = docker_manager.conteneur_pour_port(numero)
+    except Exception as exc:
+        _sortie_erreur(exc)
+
+    if conteneur is None:
+        _sortie_erreur(
+            docker_manager.ConteneurIntrouvableError(f"Aucun conteneur ne publie le port {numero}.")
+        )
+
+    terminal.afficher_conteneur(conteneur, numero)
+
+
+@app_docker.command("stop")
+def docker_stop(port: str) -> None:
+    """Arrête le conteneur Docker qui publie un port (confirmation obligatoire)."""
+    try:
+        numero = valider_port(port)
+        conteneur = docker_manager.conteneur_pour_port(numero)
+    except Exception as exc:
+        _sortie_erreur(exc)
+
+    if conteneur is None:
+        _sortie_erreur(
+            docker_manager.ConteneurIntrouvableError(f"Aucun conteneur ne publie le port {numero}.")
+        )
+
+    terminal.afficher_conteneur(conteneur, numero)
+    if not terminal.demander_confirmation(f"Arrêter le conteneur '{conteneur.nom}' ?"):
+        terminal.afficher_information("Arrêt annulé, aucun conteneur arrêté.")
+        return
+
+    terminal.afficher_information("Arrêt du conteneur...")
+    try:
+        docker_manager.arreter_conteneur(conteneur)
+    except Exception as exc:
+        _sortie_erreur(exc)
+
+    terminal.afficher_succes(f"Conteneur '{conteneur.nom}' arrêté.")
 
 
 @app_profile.command("list")

@@ -124,7 +124,7 @@ youcaport --version
 
 ---
 
-## Fonctionnalités avancées (V2 → V5)
+## Fonctionnalités avancées (V2 → V6)
 
 ### Suggérer des ports libres — Auto Port (V4)
 
@@ -194,6 +194,28 @@ Comportements importants :
 - L'arrêt reste **toujours confirmé** et passe par TERM puis KILL en dernier recours.
 - Sous Windows, le mode `--sudo` est sans effet (pas de `sudo`/`ss`).
 
+### Gestion des conteneurs Docker (V6)
+
+Quand un port est occupé par le moteur Docker, identifiez puis arrêtez le bon conteneur
+(`docker-proxy` n'est qu'un relais — arrêter le conteneur est la bonne manière) :
+
+```bash
+youcaport docker list             # conteneurs actifs + leurs ports hôtes
+youcaport docker show 5432        # conteneur qui publie le port 5432 (détails)
+youcaport docker stop 5432        # arrête le conteneur (confirmation obligatoire)
+```
+
+```text
+Port 5432 → conteneur Docker
+Nom    : postgres-dev
+ID     : a1b2c3d4e5f6
+Image  : postgres:16
+Statut : Up 2 hours
+```
+
+Fonctionne partout où le CLI `docker` est disponible. Après l'arrêt, le port revient
+libre : `youcaport status` le confirme.
+
 ### Exécutable autonome (PyInstaller)
 
 ```bash
@@ -253,6 +275,8 @@ youcaport/
 │   ├── core/                # aucune dépendance d'affichage, 100% testable
 │   │   ├── port_manager.py    # orchestration, dataclass InfoPort
 │   │   ├── process_manager.py # seul module appelant psutil (abstraction Linux/macOS/Windows)
+│   │   ├── privileges.py      # accès privilégié (sudo) aux processus protégés
+│   │   ├── docker_manager.py  # conteneurs Docker publiant des ports (V6)
 │   │   ├── validator.py       # validateurs + exceptions (PortInvalideError, ...)
 │   │   ├── profiles.py        # profils de projets (V2) — JSON via XDG
 │   │   ├── suggester.py       # ports libres à proximité (V4)
@@ -267,7 +291,9 @@ youcaport/
     ├── test_validator.py
     ├── test_profiles.py     # profils de projets
     ├── test_suggester.py    # auto-port
-    └── test_project.py      # détection par projet
+    ├── test_project.py      # détection par projet
+    ├── test_privileges.py   # parsing `ss` via sudo + enrichissement
+    └── test_docker.py       # parsing `docker ps` (V6)
 ```
 
 **Principes respectés :**
@@ -310,7 +336,7 @@ Toutes ces commandes sont aussi disponibles via `scripts/dev.sh`.
 
 `.github/workflows/ci.yml` exécute à chaque push/PR :
 - lint (`ruff check`, `ruff format --check`)
-- tests (`pytest`) sur Python 3.11 et 3.12
+- tests (`pytest`) sur Python 3.11 + 3.12 (Linux), et sur Windows et macOS (Python 3.12)
 
 À chaque tag `v*`, le workflow publie automatiquement sur PyPI via **trusted publishing**
 (OIDC — aucun token PyPI à stocker en secret).
@@ -326,11 +352,8 @@ git push origin v0.1.0
 
 Comme prévu par le cahier des charges, YoucaPort reste volontairement simple :
 
-- **Windows / macOS** : l'abstraction existe dans `process_manager.py` (psutil), mais ces
-  plateformes ne sont pas testées — seule Linux est validée.
-- **Docker management** : hors périmètre MVP.
 - **Dashboard lourd / comptes / base de données** : hors périmètre MVP ; le dashboard V5
-  est volontairement minimal (page locale, stdlib).
+  est volontairement léger (page locale, stdlib).
 
 ---
 

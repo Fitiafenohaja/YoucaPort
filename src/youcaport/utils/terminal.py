@@ -7,6 +7,7 @@ from rich.panel import Panel
 from rich.prompt import Confirm, Prompt
 from rich.table import Table
 
+from youcaport.core.docker_manager import Conteneur
 from youcaport.core.port_manager import InfoPort
 from youcaport.core.process_manager import ProcessusIntrouvableError
 from youcaport.core.validator import YoucaPortError
@@ -81,6 +82,37 @@ def afficher_profils(profils: dict[str, list[int]]) -> None:
         tableau.add_row(nom, ", ".join(str(port) for port in profils[nom]))
 
     _console.print(tableau)
+
+
+def afficher_conteneurs(conteneurs: list[Conteneur]) -> None:
+    """Affiche un tableau des conteneurs Docker et de leurs ports hôtes."""
+    tableau = Table(title="Conteneurs Docker", header_style="bold cyan")
+    tableau.add_column("NOM")
+    tableau.add_column("ID")
+    tableau.add_column("IMAGE")
+    tableau.add_column("STATUT")
+    tableau.add_column("PORTS HÔTE")
+
+    for conteneur in conteneurs:
+        ports = ", ".join(str(port) for port in sorted(conteneur.ports)) or "-"
+        tableau.add_row(
+            conteneur.nom,
+            conteneur.identifiant,
+            conteneur.image,
+            conteneur.statut,
+            ports,
+        )
+
+    _console.print(tableau)
+
+
+def afficher_conteneur(conteneur: Conteneur, port: int) -> None:
+    """Affiche les détails d'un conteneur publiant un port hôte."""
+    _console.print(f"[bold cyan]Port {port} → conteneur Docker[/bold cyan]")
+    _console.print(f"Nom    : {conteneur.nom}")
+    _console.print(f"ID     : {conteneur.identifiant}")
+    _console.print(f"Image  : {conteneur.image}")
+    _console.print(f"Statut : {conteneur.statut}")
 
 
 def afficher_succes(message: str) -> None:
